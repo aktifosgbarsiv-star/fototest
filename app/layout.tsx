@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import Sidebar from '@/components/Sidebar'
+import Shell from '@/components/Shell'
 
 export const metadata: Metadata = {
   title: 'OSGB Operasyon Sistemi',
@@ -14,12 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body>
-        <div style={{ display: 'flex', minHeight: '100vh' }}>
-          <Sidebar />
-          <main style={{ flex: 1, minWidth: 0 }}>{children}</main>
-        </div>
-      </body>
+      <body><Shell>{children}</Shell></body>
     </html>
   )
 }
