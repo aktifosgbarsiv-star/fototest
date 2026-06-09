@@ -45,7 +45,7 @@ export default function Teklifler() {
   })
 
   return (
-    <div style={{ padding:'32px 28px', maxWidth:1400, margin:'0 auto' }} className="fade-in">
+    <div className="page-pad fade-in" style={{ padding:'32px 28px', maxWidth:1400, margin:'0 auto' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16, marginBottom:24 }}>
         <div>
           <h1 style={{ fontFamily:'Sora, sans-serif', fontSize:28, fontWeight:700, letterSpacing:-0.5 }}>Satış Teklifleri</h1>
@@ -101,13 +101,13 @@ export default function Teklifler() {
       </div>
 
       {modal && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }} onClick={()=>setModal(false)}>
-          <div className="card" style={{ width:'100%', maxWidth:560, maxHeight:'90vh', overflowY:'auto', padding:28 }} onClick={e=>e.stopPropagation()}>
+        <div className="modal-wrap" style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }} onClick={()=>setModal(false)}>
+          <div className="card modal-box" style={{ width:'100%', maxWidth:560, maxHeight:'90vh', overflowY:'auto', padding:28 }} onClick={e=>e.stopPropagation()}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
               <h2 style={{ fontFamily:'Sora, sans-serif', fontSize:20, fontWeight:600, display:'flex', alignItems:'center', gap:10 }}><FileText size={20} color="var(--amber)" /> Yeni Teklif</h2>
               <button onClick={()=>setModal(false)} style={{ background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer' }}><X size={22} /></button>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+            <div className="modal-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
               <div style={{ gridColumn:'1/3' }}><label style={lbl}>Müşteri Ünvanı *</label><input value={form.musteri_unvan} onChange={e=>setForm({...form, musteri_unvan:e.target.value})} placeholder="Firma adı" /></div>
               <div><label style={lbl}>Yetkili</label><input value={form.yetkili} onChange={e=>setForm({...form, yetkili:e.target.value})} /></div>
               <div><label style={lbl}>Telefon</label><input value={form.telefon} onChange={e=>setForm({...form, telefon:e.target.value})} /></div>

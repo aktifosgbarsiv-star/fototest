@@ -98,3 +98,22 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 
 @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 .fade-in { animation: fadeIn .4s ease both; }
+
+/* ── MOBİL UYUM ── */
+@media (max-width: 600px) {
+  .modal-grid { grid-template-columns: 1fr !important; }
+  .page-pad { padding: 20px 16px !important; }
+  table { font-size: 13px; }
+  th, td { padding: 10px 12px !important; }
+  h1 { font-size: 22px !important; }
+}
+
+/* Modal mobil tam genişlik */
+@media (max-width: 600px) {
+  .modal-box { max-width: 100% !important; border-radius: 16px 16px 0 0 !important; max-height: 92vh !important; }
+  .modal-wrap { align-items: flex-end !important; padding: 0 !important; }
+}
+
+/* Kart hover - profesyonel mikro etkileşim */
+.card { transition: border-color .15s, transform .15s; }
+.stat-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }

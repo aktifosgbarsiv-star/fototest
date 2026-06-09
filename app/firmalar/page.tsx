@@ -37,7 +37,7 @@ export default function Firmalar() {
   )
 
   return (
-    <div style={{ padding:'32px 28px', maxWidth:1400, margin:'0 auto' }} className="fade-in">
+    <div className="page-pad fade-in" style={{ padding:'32px 28px', maxWidth:1400, margin:'0 auto' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16, marginBottom:24 }}>
         <div>
           <h1 style={{ fontFamily:'Sora, sans-serif', fontSize:28, fontWeight:700, letterSpacing:-0.5 }}>Firmalar</h1>
@@ -77,10 +77,10 @@ export default function Firmalar() {
       </div>
 
       {modal && (
-        <div style={ovl} onClick={()=>setModal(false)}>
-          <div className="card" style={modalBox} onClick={e=>e.stopPropagation()}>
+        <div className="modal-wrap" style={ovl} onClick={()=>setModal(false)}>
+          <div className="card modal-box" style={modalBox} onClick={e=>e.stopPropagation()}>
             <div style={modalHead}><h2 style={modalTitle}><Building2 size={20} color="var(--blue)" /> Yeni Firma</h2><button onClick={()=>setModal(false)} style={xBtn}><X size={22} /></button></div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+            <div className="modal-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
               <div style={{ gridColumn:'1/3' }}><label style={lbl}>Ünvan *</label><input value={form.unvan} onChange={e=>setForm({...form, unvan:e.target.value})} /></div>
               <div><label style={lbl}>Yetkili</label><input value={form.yetkili} onChange={e=>setForm({...form, yetkili:e.target.value})} /></div>
               <div><label style={lbl}>Telefon</label><input value={form.telefon} onChange={e=>setForm({...form, telefon:e.target.value})} /></div>

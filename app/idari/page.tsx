@@ -36,7 +36,7 @@ export default function Idari() {
   const filtreli = filtre === 'Hepsi' ? isler : isler.filter(i => i.kategori === filtre)
 
   return (
-    <div style={{ padding:'32px 28px', maxWidth:1400, margin:'0 auto' }} className="fade-in">
+    <div className="page-pad fade-in" style={{ padding:'32px 28px', maxWidth:1400, margin:'0 auto' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16, marginBottom:24 }}>
         <div>
           <h1 style={{ fontFamily:'Sora, sans-serif', fontSize:28, fontWeight:700, letterSpacing:-0.5 }}>İdari İşler</h1>
@@ -79,14 +79,14 @@ export default function Idari() {
       </div>
 
       {modal && (
-        <div style={ovl} onClick={()=>setModal(false)}>
-          <div className="card" style={modalBox} onClick={e=>e.stopPropagation()}>
+        <div className="modal-wrap" style={ovl} onClick={()=>setModal(false)}>
+          <div className="card modal-box" style={modalBox} onClick={e=>e.stopPropagation()}>
             <div style={modalHead}><h2 style={modalTitle}><ClipboardList size={20} color="var(--accent)" /> Yeni Kayıt</h2><button onClick={()=>setModal(false)} style={xBtn}><X size={22} /></button></div>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div><label style={lbl}>Kategori</label><select value={form.kategori} onChange={e=>setForm({...form, kategori:e.target.value})}>{KATEGORILER.map(k=><option key={k}>{k}</option>)}</select></div>
               <div><label style={lbl}>Başlık *</label><input value={form.baslik} onChange={e=>setForm({...form, baslik:e.target.value})} placeholder="Araç muayene, ofis malzeme..." /></div>
               <div><label style={lbl}>Detay</label><textarea rows={2} value={form.detay} onChange={e=>setForm({...form, detay:e.target.value})} /></div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              <div className="modal-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 <div><label style={lbl}>Sorumlu</label><input value={form.sorumlu} onChange={e=>setForm({...form, sorumlu:e.target.value})} /></div>
                 <div><label style={lbl}>Son Tarih</label><input type="date" value={form.son_tarih} onChange={e=>setForm({...form, son_tarih:e.target.value})} /></div>
               </div>

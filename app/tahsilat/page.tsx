@@ -54,7 +54,7 @@ export default function Tahsilat() {
   const toplamVade = filtreli.reduce((s,c)=>s+(Number(c.vadesi_gecen_tutar)||0),0)
 
   return (
-    <div style={{ padding:'32px 28px', maxWidth:1400, margin:'0 auto' }} className="fade-in">
+    <div className="page-pad fade-in" style={{ padding:'32px 28px', maxWidth:1400, margin:'0 auto' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16, marginBottom:24 }}>
         <div>
           <h1 style={{ fontFamily:'Sora, sans-serif', fontSize:28, fontWeight:700, letterSpacing:-0.5 }}>Tahsilat & Cari</h1>
@@ -114,10 +114,10 @@ export default function Tahsilat() {
 
       {/* YENİ CARİ MODAL */}
       {modal && (
-        <div style={ovl} onClick={()=>setModal(false)}>
-          <div className="card" style={modalBox} onClick={e=>e.stopPropagation()}>
+        <div className="modal-wrap" style={ovl} onClick={()=>setModal(false)}>
+          <div className="card modal-box" style={modalBox} onClick={e=>e.stopPropagation()}>
             <div style={modalHead}><h2 style={modalTitle}><Wallet size={20} color="var(--accent)" /> Yeni Cari</h2><button onClick={()=>setModal(false)} style={xBtn}><X size={22} /></button></div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+            <div className="modal-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
               <div style={{ gridColumn:'1/3' }}><label style={lbl}>Ünvan *</label><input value={form.unvan} onChange={e=>setForm({...form, unvan:e.target.value})} /></div>
               <div><label style={lbl}>Müşteri No</label><input value={form.musteri_no} onChange={e=>setForm({...form, musteri_no:e.target.value})} /></div>
               <div><label style={lbl}>Telefon</label><input value={form.telefon} onChange={e=>setForm({...form, telefon:e.target.value})} /></div>
@@ -136,7 +136,7 @@ export default function Tahsilat() {
 
       {/* TAHSİLAT MODAL */}
       {tahsilatModal && (
-        <div style={ovl} onClick={()=>setTahsilatModal(null)}>
+        <div className="modal-wrap" style={ovl} onClick={()=>setTahsilatModal(null)}>
           <div className="card" style={{ ...modalBox, maxWidth:420 }} onClick={e=>e.stopPropagation()}>
             <div style={modalHead}><h2 style={modalTitle}><Wallet size={20} color="var(--green)" /> Tahsilat Al</h2><button onClick={()=>setTahsilatModal(null)} style={xBtn}><X size={22} /></button></div>
             <div style={{ background:'var(--surface-2)', borderRadius:10, padding:14, marginBottom:16 }}>
