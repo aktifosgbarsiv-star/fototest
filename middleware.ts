@@ -1,8 +1,18 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const ROL_ERISIM: Record<string, string[]> = {
+  yonetici:  ['/','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim'],
+  operasyon: ['/','/firmalar','/koordinasyon','/idari','/ziyaretler'],
+  hekim:     ['/','/saglik','/hekim','/koordinasyon'],
+  satis:     ['/','/firmalar','/teklifler'],
+  muhasebe:  ['/','/tahsilat','/saglik'],
+  saha:      ['/','/koordinasyon','/firmalar','/ziyaretler'],
+}
+
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: req })
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -17,16 +27,40 @@ export async function middleware(req: NextRequest) {
       },
     }
   )
+
   const { data: { user } } = await supabase.auth.getUser()
   const path = req.nextUrl.pathname
   const acik = path === '/giris' || path.startsWith('/_next') || path.startsWith('/api')
 
+  // Auth yoksa girişe yönlendir
   if (!user && !acik) {
     return NextResponse.redirect(new URL('/giris', req.url))
   }
+
+  // Giriş yapmışsa /giris'e girmesin
   if (user && path === '/giris') {
     return NextResponse.redirect(new URL('/', req.url))
   }
+
+  // Sayfa koruma: rol kontrolü
+  if (user && !acik) {
+    const { data: personel } = await supabase
+      .from('personeller')
+      .select('rol')
+      .eq('id', user.id)
+      .single()
+
+    const rol = personel?.rol || 'operasyon'
+    const izinli = ROL_ERISIM[rol] || ROL_ERISIM.operasyon
+
+    // Tam eşleşme kontrolü (alt sayfa yoksa path direkt karşılaştır)
+    const yetkili = izinli.some(r => path === r || path.startsWith(r + '/'))
+
+    if (!yetkili) {
+      return NextResponse.redirect(new URL('/', req.url))
+    }
+  }
+
   return res
 }
 
