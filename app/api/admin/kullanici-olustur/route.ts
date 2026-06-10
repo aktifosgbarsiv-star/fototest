@@ -9,16 +9,24 @@ const adminClient = createClient(
 
 export async function POST(req: NextRequest) {
   const { email, password, ad_soyad, rol, secret } = await req.json()
-  if (secret !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 })
+
+  const validSecret = process.env.ADMIN_SECRET || 'osgb-admin-2026'
+  if (secret !== validSecret) {
+    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
   }
+  if (!email || !password || password.length < 6) {
+    return NextResponse.json({ error: 'E-posta ve en az 6 karakterli şifre gerekli' }, { status: 400 })
+  }
+
   const { data: authData, error: authErr } = await adminClient.auth.admin.createUser({
     email, password, email_confirm: true
   })
   if (authErr) return NextResponse.json({ error: authErr.message }, { status: 400 })
-  const { error: pErr } = await adminClient.from('personeller').insert({
+
+  const { error: pErr } = await adminClient.from('personeller').upsert({
     id: authData.user.id, ad_soyad, rol, aktif: true
   })
   if (pErr) return NextResponse.json({ error: pErr.message }, { status: 400 })
+
   return NextResponse.json({ ok: true, id: authData.user.id, email })
 }

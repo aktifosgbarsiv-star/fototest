@@ -3,12 +3,12 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useState, useEffect } from 'react'
-import { LogOut, LayoutDashboard, Building2, HeartPulse, FileText, Wallet, ClipboardList, CalendarDays, MapPin, Stethoscope, Package, Truck, Activity } from 'lucide-react'
+import { UserCog, LogOut, LayoutDashboard, Building2, HeartPulse, FileText, Wallet, ClipboardList, CalendarDays, MapPin, Stethoscope, Package, Truck, Activity } from 'lucide-react'
 
 const ROL_AD: any = { yonetici:'Yönetici', operasyon:'Operasyon', hekim:'Hekim', satis:'Satış', muhasebe:'Muhasebe', saha:'Saha Uzmanı' }
 
 const ERISIM: any = {
-  yonetici:  ['/','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar'],
+  yonetici:  ['/','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller'],
   operasyon: ['/','/firmalar','/koordinasyon','/idari','/ziyaretler','/taramalar'],
   hekim:     ['/','/saglik','/hekim','/koordinasyon'],
   satis:     ['/','/firmalar','/teklifler','/malzemeler','/tedarikciler'],
@@ -36,6 +36,9 @@ const GRUPLAR = [
   { baslik:'Finans & İdari', linkler:[
     { href:'/tahsilat', label:'Tahsilat', icon:Wallet },
     { href:'/idari', label:'İdari İşler', icon:ClipboardList },
+  ]},
+  { baslik:'Yönetim', linkler:[
+    { href:'/personeller', label:'Personel & Yetkiler', icon:UserCog },
   ]},
 ]
 
