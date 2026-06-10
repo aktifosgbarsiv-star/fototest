@@ -123,7 +123,7 @@ export default function Dashboard() {
       </div>
 
       {/* METRİK KARTLARI */}
-      <div className="stat-grid">
+      <div className="stat-grid" style={{ display:"grid", gap:14, marginBottom:20 }}>
         {kartlar.map((k, i) => {
           const Icon = k.icon
           return (
