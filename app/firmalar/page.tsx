@@ -9,6 +9,7 @@ const TEHLIKE = ['Az Tehlikeli','Tehlikeli','Çok Tehlikeli']
 
 export default function Firmalar() {
   const [firmalar, setFirmalar] = useState<any[]>([])
+  const [personeller, setPersoneller] = useState<any[]>([])
   const [arama, setArama] = useState('')
   const [modal, setModal] = useState(false)
   const [duzenle, setDuzenle] = useState<any>(null)
@@ -23,8 +24,8 @@ export default function Firmalar() {
       unvan:'', isg_katip_unvan:'', yetkili:'', telefon:'', adres:'', bolge:'', faaliyet:'',
       tehlike_sinifi:'Az Tehlikeli', sgk_sicil:'', calisan_sayisi:'', plan_sayi:'',
       fatura: false, fatura_aciklama:'', klasor:'', cari_sozlesme: false,
-      gorevli_igu:'', igu_atama_tarihi:'', gorevli_ih:'', ih_atama_tarihi:'',
-      gorevli_dsp:'', bhl_atama:'', atama_aciklama:'', dr_sure:'', uzman_sure:'',
+      gorevli_igu:'', igu_id:'', igu_atama_tarihi:'', gorevli_ih:'', ih_id:'', ih_atama_tarihi:'',
+      gorevli_dsp:'', dsp_id:'', bhl_atama:'', atama_aciklama:'', dr_sure:'', uzman_sure:'',
       ziyaret_periyodu:'', gorevli_ih_giden:'', ih_periyot:'',
       kisi_basi_ucret:'', kisi_basi_ucret_yeni:'', paket_3000:'', paket_3434:''
     }
@@ -34,9 +35,13 @@ export default function Firmalar() {
   useEffect(() => { yukle() }, [])
 
   async function yukle() {
-    const { data, error } = await sb.from('firmalar').select('*').order('unvan')
-    if (error) { setHata('Yüklenemedi'); return }
-    setFirmalar(data || [])
+    const [fRes, pRes] = await Promise.all([
+      sb.from('firmalar').select('*').order('unvan'),
+      sb.from('personeller').select('id, ad_soyad, rol').eq('aktif', true).order('ad_soyad')
+    ])
+    if (fRes.error) { setHata('Yüklenemedi'); return }
+    setFirmalar(fRes.data || [])
+    setPersoneller(pRes.data || [])
     setYukleniyor(false)
   }
 
@@ -83,9 +88,9 @@ export default function Firmalar() {
       calisan_sayisi: f.calisan_sayisi?.toString()||'', plan_sayi: f.plan_sayi?.toString()||'',
       fatura: f.fatura||false, fatura_aciklama: f.fatura_aciklama||'', klasor: f.klasor||'',
       cari_sozlesme: f.cari_sozlesme||false,
-      gorevli_igu: f.gorevli_igu||'', igu_atama_tarihi: f.igu_atama_tarihi||'',
-      gorevli_ih: f.gorevli_ih||'', ih_atama_tarihi: f.ih_atama_tarihi||'',
-      gorevli_dsp: f.gorevli_dsp||'', bhl_atama: f.bhl_atama||'',
+      gorevli_igu: f.gorevli_igu||'', igu_id: f.igu_id||'', igu_atama_tarihi: f.igu_atama_tarihi||'',
+      gorevli_ih: f.gorevli_ih||'', ih_id: f.ih_id||'', ih_atama_tarihi: f.ih_atama_tarihi||'',
+      gorevli_dsp: f.gorevli_dsp||'', dsp_id: f.dsp_id||'', bhl_atama: f.bhl_atama||'',
       atama_aciklama: f.atama_aciklama||'', dr_sure: f.dr_sure?.toString()||'',
       uzman_sure: f.uzman_sure?.toString()||'', ziyaret_periyodu: f.ziyaret_periyodu||'',
       gorevli_ih_giden: f.gorevli_ih_giden||'', ih_periyot: f.ih_periyot||'',
@@ -267,11 +272,35 @@ export default function Firmalar() {
 
             {sekme === 'atama' && (
               <div className="modal-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                <div><label style={lbl}>İSG Uzmanı (İGU)</label><input value={form.gorevli_igu} onChange={e=>setForm({...form, gorevli_igu:e.target.value})} /></div>
+                <div><label style={lbl}>İSG Uzmanı (İGU)</label>
+                <select value={form.igu_id} onChange={e=>{
+                  const p = personeller.find(x=>x.id===e.target.value)
+                  setForm({...form, igu_id:e.target.value, gorevli_igu:p?.ad_soyad||''})
+                }}>
+                  <option value="">Seçiniz...</option>
+                  {personeller.filter(p=>['operasyon','saha','yonetici'].includes(p.rol)).map(p=><option key={p.id} value={p.id}>{p.ad_soyad}</option>)}
+                </select>
+              </div>
                 <div><label style={lbl}>İGU Atama Tarihi</label><input type="date" value={form.igu_atama_tarihi} onChange={e=>setForm({...form, igu_atama_tarihi:e.target.value})} /></div>
-                <div><label style={lbl}>İş Hekimi (İH)</label><input value={form.gorevli_ih} onChange={e=>setForm({...form, gorevli_ih:e.target.value})} /></div>
+                <div><label style={lbl}>İş Hekimi (İH)</label>
+                <select value={form.ih_id} onChange={e=>{
+                  const p = personeller.find(x=>x.id===e.target.value)
+                  setForm({...form, ih_id:e.target.value, gorevli_ih:p?.ad_soyad||''})
+                }}>
+                  <option value="">Seçiniz...</option>
+                  {personeller.filter(p=>p.rol==='hekim'||p.rol==='yonetici').map(p=><option key={p.id} value={p.id}>{p.ad_soyad}</option>)}
+                </select>
+              </div>
                 <div><label style={lbl}>İH Atama Tarihi</label><input type="date" value={form.ih_atama_tarihi} onChange={e=>setForm({...form, ih_atama_tarihi:e.target.value})} /></div>
-                <div><label style={lbl}>DSP</label><input value={form.gorevli_dsp} onChange={e=>setForm({...form, gorevli_dsp:e.target.value})} /></div>
+                <div><label style={lbl}>DSP</label>
+                <select value={form.dsp_id} onChange={e=>{
+                  const p = personeller.find(x=>x.id===e.target.value)
+                  setForm({...form, dsp_id:e.target.value, gorevli_dsp:p?.ad_soyad||''})
+                }}>
+                  <option value="">Seçiniz...</option>
+                  {personeller.map(p=><option key={p.id} value={p.id}>{p.ad_soyad}</option>)}
+                </select>
+              </div>
                 <div><label style={lbl}>BHL Atama</label><input value={form.bhl_atama} onChange={e=>setForm({...form, bhl_atama:e.target.value})} /></div>
                 <div><label style={lbl}>Uzman Süre (dk)</label><input type="number" value={form.uzman_sure} onChange={e=>setForm({...form, uzman_sure:e.target.value})} /></div>
                 <div><label style={lbl}>Dr Süre (dk)</label><input type="number" value={form.dr_sure} onChange={e=>setForm({...form, dr_sure:e.target.value})} /></div>

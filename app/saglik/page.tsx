@@ -11,6 +11,7 @@ const ODEME_RENK: any = { Cari:'var(--amber)', İBAN:'var(--blue)', Peşin:'var(
 export default function Saglik() {
   const [kayitlar, setKayitlar] = useState<any[]>([])
   const [firmalar, setFirmalar] = useState<any[]>([])
+  const [personeller, setPersoneller] = useState<any[]>([])
   const [arama, setArama] = useState('')
   const [modal, setModal] = useState(false)
   const [detay, setDetay] = useState<any>(null)
@@ -19,20 +20,22 @@ export default function Saglik() {
   const [form, setForm] = useState<any>(bosForm())
 
   function bosForm() {
-    return { tarih:new Date().toISOString().slice(0,10), ad_soyad:'', dogum_tarihi:'', telefon:'', firma:'', firma_id:'', ucret:'', odeme_sekli:'Peşin', tetkikler:{} }
+    return { tarih:new Date().toISOString().slice(0,10), ad_soyad:'', dogum_tarihi:'', telefon:'', firma:'', firma_id:'', hekim_id:'', ucret:'', odeme_sekli:'Peşin', tetkikler:{} }
   }
 
   const sb = createClient()
   useEffect(() => { yukle() }, [])
 
   async function yukle() {
-    const [kRes, fRes] = await Promise.all([
-      sb.from('hasta_kayitlari').select('*').order('tarih', { ascending:false }).limit(500),
-      sb.from('firmalar').select('id, unvan').order('unvan')
+    const [kRes, fRes, pRes] = await Promise.all([
+      sb.from('hasta_kayitlari').select('*, personeller(ad_soyad)').order('tarih', { ascending:false }).limit(500),
+      sb.from('firmalar').select('id, unvan').order('unvan'),
+      sb.from('personeller').select('id, ad_soyad, rol').eq('aktif', true).in('rol', ['hekim','yonetici']).order('ad_soyad')
     ])
     if (kRes.error) { setHata('Yüklenemedi'); return }
     setKayitlar(kRes.data || [])
     setFirmalar(fRes.data || [])
+    setPersoneller(pRes.data || [])
     setYukleniyor(false)
   }
 
@@ -42,7 +45,8 @@ export default function Saglik() {
     const { error } = await sb.from('hasta_kayitlari').insert({
       ...form, ucret:Number(form.ucret)||0,
       dogum_tarihi:form.dogum_tarihi||null,
-      firma_id:form.firma_id||null
+      firma_id:form.firma_id||null,
+      hekim_id:form.hekim_id||null
     })
     if (error) { setHata(error.message); return }
     setModal(false); setForm(bosForm()); yukle()
@@ -149,6 +153,12 @@ export default function Saglik() {
                   {firmalar.map(f=><option key={f.id} value={f.id}>{f.unvan}</option>)}
                 </select>
                 {!form.firma_id && <input style={{ marginTop:8 }} value={form.firma} onChange={e=>setForm({...form, firma:e.target.value})} placeholder="Veya firma adını yazın..." />}
+              </div>
+              <div><label style={lbl}>Muayene Hekimi</label>
+                <select value={form.hekim_id} onChange={e=>setForm({...form, hekim_id:e.target.value})}>
+                  <option value="">Seçiniz...</option>
+                  {personeller.map(p=><option key={p.id} value={p.id}>{p.ad_soyad}</option>)}
+                </select>
               </div>
               <div><label style={lbl}>Ücret (₺)</label><input type="number" value={form.ucret} onChange={e=>setForm({...form, ucret:e.target.value})} /></div>
               <div style={{ gridColumn:'1/3' }}>
