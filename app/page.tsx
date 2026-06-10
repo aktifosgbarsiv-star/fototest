@@ -123,7 +123,7 @@ export default function Dashboard() {
       </div>
 
       {/* METRİK KARTLARI */}
-      <div className="stat-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:14, marginBottom:20 }}>
+      <div className="stat-grid">
         {kartlar.map((k, i) => {
           const Icon = k.icon
           return (
@@ -191,8 +191,8 @@ export default function Dashboard() {
 
       {/* GRAFİKLER — sadece yönetici */}
       {izin.includes('grafik') && (
-        <div style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:16 }} className="grafik-grid">
-          <style>{`@media(max-width:768px){.grafik-grid{grid-template-columns:1fr !important;}}`}</style>
+        <div className="grafik-grid">
+          
 
           <div className="card" style={{ padding:22 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
