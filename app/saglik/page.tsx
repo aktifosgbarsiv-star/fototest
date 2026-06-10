@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Plus, Search, X, HeartPulse } from 'lucide-react'
+import { Plus, Search, X, HeartPulse, Trash2 } from 'lucide-react'
 
-const TETKIKLER = ['AKC','ODİO','SFT','EKG','CBC','AST','ALT','ÜRE','KREATİNİN','GLUKOZ','BURUN','BOĞAZ']
+const TETKIKLER = ['EK2','AKC','ODİO','SFT','EKG','CBC','AST','ALT','ÜRE','KREATİNİN','GLUKOZ','BURUN','BOĞAZ']
 const ODEME = ['Cari','İBAN','Peşin','POS']
 const ODEME_RENK: any = { Cari:'var(--amber)', İBAN:'var(--blue)', Peşin:'var(--green)', POS:'var(--accent)' }
 
@@ -11,24 +11,42 @@ export default function Saglik() {
   const [kayitlar, setKayitlar] = useState<any[]>([])
   const [arama, setArama] = useState('')
   const [modal, setModal] = useState(false)
+  const [detay, setDetay] = useState<any>(null)
   const [yukleniyor, setYukleniyor] = useState(true)
-  const [form, setForm] = useState<any>({ tarih:new Date().toISOString().slice(0,10), ad_soyad:'', telefon:'', firma:'', ucret:'', odeme_sekli:'Peşin', tetkikler:{} })
+  const [hata, setHata] = useState('')
+  const [form, setForm] = useState<any>(bosForm())
+
+  function bosForm() {
+    return { tarih: new Date().toISOString().slice(0,10), ad_soyad:'', dogum_tarihi:'', telefon:'', firma:'', ucret:'', odeme_sekli:'Peşin', tetkikler:{} }
+  }
 
   const sb = createClient()
-
   useEffect(() => { yukle() }, [])
 
   async function yukle() {
-    const { data } = await sb.from('hasta_kayitlari').select('*').order('tarih', { ascending:false }).limit(200)
+    const { data, error } = await sb.from('hasta_kayitlari').select('*').order('tarih', { ascending:false }).limit(500)
+    if (error) { setHata('Veriler yüklenemedi.'); return }
     setKayitlar(data || [])
     setYukleniyor(false)
   }
 
   async function kaydet() {
     if (!form.ad_soyad) return
-    await sb.from('hasta_kayitlari').insert({ ...form, ucret: Number(form.ucret)||0 })
+    setHata('')
+    const { error } = await sb.from('hasta_kayitlari').insert({
+      ...form,
+      ucret: Number(form.ucret)||0,
+      dogum_tarihi: form.dogum_tarihi || null
+    })
+    if (error) { setHata('Kayıt sırasında hata: ' + error.message); return }
     setModal(false)
-    setForm({ tarih:new Date().toISOString().slice(0,10), ad_soyad:'', telefon:'', firma:'', ucret:'', odeme_sekli:'Peşin', tetkikler:{} })
+    setForm(bosForm())
+    yukle()
+  }
+
+  async function sil(id: string) {
+    if (!confirm('Bu kaydı silmek istiyor musunuz?')) return
+    await sb.from('hasta_kayitlari').delete().eq('id', id)
     yukle()
   }
 
@@ -54,6 +72,8 @@ export default function Saglik() {
         <button className="btn" onClick={() => setModal(true)}><Plus size={18} /> Yeni Kayıt</button>
       </div>
 
+      {hata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:16 }}>{hata}</div>}
+
       <div style={{ position:'relative', marginBottom:20, maxWidth:360 }}>
         <Search size={17} style={{ position:'absolute', left:14, top:12, color:'var(--text-faint)' }} />
         <input value={arama} onChange={e=>setArama(e.target.value)} placeholder="Hasta veya firma ara..." style={{ paddingLeft:40 }} />
@@ -64,20 +84,21 @@ export default function Saglik() {
           <table>
             <thead>
               <tr>
-                <th>Tarih</th><th>Ad Soyad</th><th>Firma</th><th>Ücret</th><th>Ödeme</th><th>Tetkikler</th>
+                <th>Tarih</th><th>Ad Soyad</th><th>D. Tarihi</th><th>Firma</th><th>Ücret</th><th>Ödeme</th><th>Tetkikler</th><th></th>
               </tr>
             </thead>
             <tbody>
               {yukleniyor ? (
-                <tr><td colSpan={6} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Yükleniyor...</td></tr>
+                <tr><td colSpan={8} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Yükleniyor...</td></tr>
               ) : filtreli.length === 0 ? (
-                <tr><td colSpan={6} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Kayıt yok</td></tr>
+                <tr><td colSpan={8} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Kayıt yok</td></tr>
               ) : filtreli.map(k => {
                 const aktifTetkik = Object.entries(k.tetkikler||{}).filter(([,v])=>v).map(([t])=>t)
                 return (
-                  <tr key={k.id}>
-                    <td style={{ color:'var(--text-dim)', whiteSpace:'nowrap' }}>{new Date(k.tarih).toLocaleDateString('tr-TR')}</td>
+                  <tr key={k.id} style={{ cursor:'pointer' }} onClick={()=>setDetay(k)}>
+                    <td style={{ color:'var(--text-dim)', whiteSpace:'nowrap' }}>{new Date(k.tarih+'T00:00:00').toLocaleDateString('tr-TR')}</td>
                     <td style={{ fontWeight:500 }}>{k.ad_soyad}</td>
+                    <td style={{ color:'var(--text-dim)', whiteSpace:'nowrap' }}>{k.dogum_tarihi ? new Date(k.dogum_tarihi+'T00:00:00').toLocaleDateString('tr-TR') : '—'}</td>
                     <td style={{ color:'var(--text-dim)' }}>{k.firma||'—'}</td>
                     <td style={{ fontWeight:600, whiteSpace:'nowrap' }}>{tl(Number(k.ucret)||0)}</td>
                     <td><span className="badge" style={{ background:`${ODEME_RENK[k.odeme_sekli]}22`, color:ODEME_RENK[k.odeme_sekli] }}>{k.odeme_sekli}</span></td>
@@ -87,6 +108,9 @@ export default function Saglik() {
                           aktifTetkik.map(t => <span key={t} style={{ fontSize:10, background:'var(--surface-2)', color:'var(--text-dim)', padding:'2px 7px', borderRadius:5, border:'1px solid var(--border)' }}>{t}</span>)}
                       </div>
                     </td>
+                    <td onClick={e=>e.stopPropagation()}>
+                      <button onClick={()=>sil(k.id)} style={{ background:'none', border:'none', color:'var(--text-faint)', cursor:'pointer', padding:4 }}><Trash2 size={15} /></button>
+                    </td>
                   </tr>
                 )
               })}
@@ -95,15 +119,50 @@ export default function Saglik() {
         </div>
       </div>
 
-      {/* MODAL */}
+      {/* DETAY MODAL */}
+      {detay && (
+        <div style={ovl} onClick={()=>setDetay(null)}>
+          <div className="card" style={{ ...modalBox, maxWidth:480 }} onClick={e=>e.stopPropagation()}>
+            <div style={modalHead}>
+              <h2 style={modalTitle}><HeartPulse size={20} color="var(--green)" /> Hasta Detayı</h2>
+              <button onClick={()=>setDetay(null)} style={xBtn}><X size={22} /></button>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {[
+                ['Ad Soyad', detay.ad_soyad],
+                ['Doğum Tarihi', detay.dogum_tarihi ? new Date(detay.dogum_tarihi+'T00:00:00').toLocaleDateString('tr-TR') : '—'],
+                ['Telefon', detay.telefon||'—'],
+                ['Firma', detay.firma||'—'],
+                ['Tarih', new Date(detay.tarih+'T00:00:00').toLocaleDateString('tr-TR')],
+                ['Ücret', tl(Number(detay.ucret)||0)],
+                ['Ödeme', detay.odeme_sekli],
+              ].map(([k,v]) => (
+                <div key={k} style={{ display:'flex', gap:12, fontSize:14 }}>
+                  <span style={{ color:'var(--text-dim)', minWidth:110 }}>{k}</span>
+                  <span style={{ fontWeight:500 }}>{v}</span>
+                </div>
+              ))}
+              <div style={{ display:'flex', gap:12, fontSize:14 }}>
+                <span style={{ color:'var(--text-dim)', minWidth:110 }}>Tetkikler</span>
+                <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                  {Object.entries(detay.tetkikler||{}).filter(([,v])=>v).map(([t]) =>
+                    <span key={t} style={{ fontSize:11, background:'var(--green-soft)', color:'var(--green)', padding:'2px 8px', borderRadius:5 }}>{t}</span>
+                  )}
+                  {Object.values(detay.tetkikler||{}).every(v=>!v) && <span style={{ color:'var(--text-faint)' }}>—</span>}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* YENİ KAYIT MODAL */}
       {modal && (
-        <div className="modal-wrap" style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }} onClick={()=>setModal(false)}>
-          <div className="card modal-box" style={{ width:'100%', maxWidth:560, maxHeight:'90vh', overflowY:'auto', padding:28 }} onClick={e=>e.stopPropagation()}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
-              <h2 style={{ fontFamily:'Sora, sans-serif', fontSize:20, fontWeight:600, display:'flex', alignItems:'center', gap:10 }}>
-                <HeartPulse size={20} color="var(--green)" /> Yeni Hasta Kaydı
-              </h2>
-              <button onClick={()=>setModal(false)} style={{ background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer' }}><X size={22} /></button>
+        <div className="modal-wrap" style={ovl} onClick={()=>setModal(false)}>
+          <div className="card modal-box" style={modalBox} onClick={e=>e.stopPropagation()}>
+            <div style={modalHead}>
+              <h2 style={modalTitle}><HeartPulse size={20} color="var(--green)" /> Yeni Hasta Kaydı</h2>
+              <button onClick={()=>setModal(false)} style={xBtn}><X size={22} /></button>
             </div>
 
             <div className="modal-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
@@ -114,6 +173,10 @@ export default function Saglik() {
               <div>
                 <label style={lbl}>Ad Soyad *</label>
                 <input value={form.ad_soyad} onChange={e=>setForm({...form, ad_soyad:e.target.value})} placeholder="Hasta adı" />
+              </div>
+              <div>
+                <label style={lbl}>Doğum Tarihi</label>
+                <input type="date" value={form.dogum_tarihi} onChange={e=>setForm({...form, dogum_tarihi:e.target.value})} />
               </div>
               <div>
                 <label style={lbl}>Telefon</label>
@@ -127,11 +190,19 @@ export default function Saglik() {
                 <label style={lbl}>Ücret (₺)</label>
                 <input type="number" value={form.ucret} onChange={e=>setForm({...form, ucret:e.target.value})} placeholder="0" />
               </div>
-              <div>
+              <div style={{ gridColumn:'1/3' }}>
                 <label style={lbl}>Ödeme Şekli</label>
-                <select value={form.odeme_sekli} onChange={e=>setForm({...form, odeme_sekli:e.target.value})}>
-                  {ODEME.map(o=><option key={o} value={o}>{o}</option>)}
-                </select>
+                <div style={{ display:'flex', gap:8 }}>
+                  {ODEME.map(o => (
+                    <button key={o} type="button" onClick={()=>setForm({...form, odeme_sekli:o})}
+                      style={{ flex:1, padding:'9px', borderRadius:8, fontSize:13, cursor:'pointer', fontFamily:'inherit', transition:'all .12s',
+                        background: form.odeme_sekli===o ? `${ODEME_RENK[o]}22` : 'var(--surface-2)',
+                        border:`1px solid ${form.odeme_sekli===o ? ODEME_RENK[o] : 'var(--border)'}`,
+                        color: form.odeme_sekli===o ? ODEME_RENK[o] : 'var(--text-dim)' }}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -151,6 +222,8 @@ export default function Saglik() {
               })}
             </div>
 
+            {hata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:12 }}>{hata}</div>}
+
             <div style={{ display:'flex', gap:10 }}>
               <button className="btn-ghost btn" style={{ flex:1, justifyContent:'center' }} onClick={()=>setModal(false)}>İptal</button>
               <button className="btn" style={{ flex:1, justifyContent:'center' }} onClick={kaydet}>Kaydet</button>
@@ -163,3 +236,8 @@ export default function Saglik() {
 }
 
 const lbl: any = { display:'block', fontSize:12, color:'var(--text-dim)', marginBottom:6, fontWeight:500 }
+const ovl: any = { position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }
+const modalBox: any = { width:'100%', maxWidth:560, maxHeight:'90vh', overflowY:'auto', padding:28 }
+const modalHead: any = { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }
+const modalTitle: any = { fontFamily:'Sora, sans-serif', fontSize:20, fontWeight:600, display:'flex', alignItems:'center', gap:10 }
+const xBtn: any = { background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer' }
