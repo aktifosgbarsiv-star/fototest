@@ -62,13 +62,13 @@ export default function MobileTopbar() {
   return (
     <>
       <style>{`
-        .mob-topbar { display:none; }
-        @media (max-width:768px) {
+        .mob-topbar { display: none; }
+        @media (max-width: 768px) {
           .mob-topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 16px;
+            padding: 0 12px;
             height: 52px;
             background: var(--surface);
             border-bottom: 1px solid var(--border);
@@ -101,16 +101,24 @@ export default function MobileTopbar() {
         .mob-drawer-overlay.open { display: block; }
       `}</style>
 
-      {/* TOP BAR — sadece mobilde */}
+      {/* TOP BAR */}
       <div className="mob-topbar">
+        {/* Sol: hamburger */}
         <button onClick={() => setAcik(true)}
-          style={{ background:'none', border:'none', color:'var(--text)', cursor:'pointer', padding:8, margin:-8, display:'flex', alignItems:'center' }}>
+          style={{ background:'none', border:'none', color:'var(--text)', cursor:'pointer', padding:8, display:'flex', alignItems:'center' }}>
           <Menu size={24} />
         </button>
-        <span style={{ fontFamily:'Sora,sans-serif', fontWeight:700, fontSize:17, position:'absolute', left:'50%', transform:'translateX(-50%)' }}>
+
+        {/* Orta: sayfa adı */}
+        <span style={{ fontFamily:'Sora,sans-serif', fontWeight:600, fontSize:15, color:'var(--text)' }}>
           {aktif?.label || 'OSGB'}
         </span>
-        <div style={{ width:40 }} />
+
+        {/* Sağ: çıkış butonu */}
+        <button onClick={cikis}
+          style={{ background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer', padding:8, display:'flex', alignItems:'center', gap:4 }}>
+          <LogOut size={20} />
+        </button>
       </div>
 
       {/* OVERLAY */}
@@ -119,25 +127,20 @@ export default function MobileTopbar() {
       {/* DRAWER */}
       <div className={`mob-drawer ${acik ? 'open' : ''}`}>
         {/* Header */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 18px', borderBottom:'1px solid var(--border)' }}>
-          <span style={{ fontFamily:'Sora,sans-serif', fontWeight:700, fontSize:18 }}>
-            OSGB<span style={{ color:'var(--accent)' }}>.</span>
-          </span>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 18px', borderBottom:'1px solid var(--border)', flexShrink:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:34, height:34, borderRadius:10, background:'var(--accent-soft)', color:'var(--accent)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:15, flexShrink:0 }}>
+              {(personel?.ad_soyad || '?').charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div style={{ fontWeight:600, fontSize:14 }}>{personel?.ad_soyad || '...'}</div>
+              <div style={{ fontSize:11, color:'var(--text-faint)' }}>{ROL_AD[rol]}</div>
+            </div>
+          </div>
           <button onClick={() => setAcik(false)}
             style={{ background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer', padding:4, display:'flex' }}>
             <X size={20} />
           </button>
-        </div>
-
-        {/* Kullanıcı */}
-        <div style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 18px', borderBottom:'1px solid var(--border)' }}>
-          <div style={{ width:38, height:38, borderRadius:10, background:'var(--accent-soft)', color:'var(--accent)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:16, flexShrink:0 }}>
-            {(personel?.ad_soyad || '?').charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <div style={{ fontWeight:600, fontSize:14 }}>{personel?.ad_soyad || '...'}</div>
-            <div style={{ fontSize:12, color:'var(--text-faint)' }}>{ROL_AD[rol]}</div>
-          </div>
         </div>
 
         {/* Nav */}
@@ -159,8 +162,8 @@ export default function MobileTopbar() {
           })}
         </nav>
 
-        {/* Çıkış */}
-        <div style={{ padding:'14px 18px', borderTop:'1px solid var(--border)' }}>
+        {/* Çıkış — drawer altında da var */}
+        <div style={{ padding:'14px 18px', borderTop:'1px solid var(--border)', flexShrink:0 }}>
           <button onClick={cikis}
             style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
               background:'var(--surface-2)', border:'1px solid var(--border)', color:'var(--text-dim)',
