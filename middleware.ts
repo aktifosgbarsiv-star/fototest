@@ -13,6 +13,10 @@ const ROL_ERISIM: Record<string, string[]> = {
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: req })
 
+  // Cache'i tamamen kapat — auth kontrolü her istekte yapılmalı
+  res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+  res.headers.set('x-middleware-cache', 'no-cache')
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,6 +26,7 @@ export async function middleware(req: NextRequest) {
         setAll(cs) {
           cs.forEach(({ name, value }) => req.cookies.set(name, value))
           res = NextResponse.next({ request: req })
+          res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
           cs.forEach(({ name, value, options }) => res.cookies.set(name, value, options))
         },
       },
@@ -32,17 +37,14 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname
   const acik = path === '/giris' || path.startsWith('/_next') || path.startsWith('/api')
 
-  // Auth yoksa girişe yönlendir
   if (!user && !acik) {
     return NextResponse.redirect(new URL('/giris', req.url))
   }
 
-  // Giriş yapmışsa /giris'e girmesin
   if (user && path === '/giris') {
     return NextResponse.redirect(new URL('/', req.url))
   }
 
-  // Sayfa koruma: rol kontrolü
   if (user && !acik) {
     const { data: personel } = await supabase
       .from('personeller')
@@ -52,8 +54,6 @@ export async function middleware(req: NextRequest) {
 
     const rol = personel?.rol || 'operasyon'
     const izinli = ROL_ERISIM[rol] || ROL_ERISIM.operasyon
-
-    // Tam eşleşme kontrolü (alt sayfa yoksa path direkt karşılaştır)
     const yetkili = izinli.some(r => path === r || path.startsWith(r + '/'))
 
     if (!yetkili) {
@@ -64,4 +64,6 @@ export async function middleware(req: NextRequest) {
   return res
 }
 
-export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'] }
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+}
