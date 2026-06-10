@@ -3,28 +3,29 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { LayoutDashboard, Building2, HeartPulse, FileText, Wallet, ClipboardList, CalendarDays, Menu, X, LogOut } from 'lucide-react'
+import { LayoutDashboard, Building2, HeartPulse, FileText, Wallet, ClipboardList, CalendarDays, Menu, X, LogOut, MapPin, Stethoscope } from 'lucide-react'
 
 const ROL_AD: any = { yonetici:'Yönetici', operasyon:'Operasyon', hekim:'Hekim', satis:'Satış', muhasebe:'Muhasebe', saha:'Saha Uzmanı' }
 
-// Hangi rol hangi sayfaları görür
 const ERISIM: any = {
-  yonetici: ['/','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari'],
-  operasyon: ['/','/firmalar','/koordinasyon','/idari'],
-  hekim: ['/','/saglik','/koordinasyon'],
-  satis: ['/','/firmalar','/teklifler'],
-  muhasebe: ['/','/tahsilat','/saglik'],
-  saha: ['/','/koordinasyon','/firmalar'],
+  yonetici: ['/','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim'],
+  operasyon: ['/','/firmalar','/koordinasyon','/idari','/ziyaretler'],
+  hekim:     ['/','/saglik','/hekim','/koordinasyon'],
+  satis:     ['/','/firmalar','/teklifler'],
+  muhasebe:  ['/','/tahsilat','/saglik'],
+  saha:      ['/','/koordinasyon','/firmalar','/ziyaretler'],
 }
 
 const TUM_LINKLER = [
-  { href:'/', label:'Dashboard', icon:LayoutDashboard },
-  { href:'/firmalar', label:'Firmalar', icon:Building2 },
-  { href:'/saglik', label:'Sağlık Tarama', icon:HeartPulse },
-  { href:'/teklifler', label:'Satış Teklifleri', icon:FileText },
-  { href:'/tahsilat', label:'Tahsilat', icon:Wallet },
-  { href:'/koordinasyon', label:'İSG Koordinasyon', icon:CalendarDays },
-  { href:'/idari', label:'İdari İşler', icon:ClipboardList },
+  { href:'/',           label:'Dashboard',       icon:LayoutDashboard },
+  { href:'/firmalar',   label:'Firmalar',         icon:Building2 },
+  { href:'/saglik',     label:'Sağlık Tarama',    icon:HeartPulse },
+  { href:'/hekim',      label:'Hekim Ekranı',     icon:Stethoscope },
+  { href:'/teklifler',  label:'Satış Teklifleri', icon:FileText },
+  { href:'/tahsilat',   label:'Tahsilat',         icon:Wallet },
+  { href:'/ziyaretler', label:'İSG Ziyaretleri',  icon:MapPin },
+  { href:'/koordinasyon',label:'Koordinasyon',    icon:CalendarDays },
+  { href:'/idari',      label:'İdari İşler',      icon:ClipboardList },
 ]
 
 export default function Sidebar() {
@@ -38,7 +39,7 @@ export default function Sidebar() {
     sb.auth.getUser().then(async ({ data }) => {
       if (data.user) {
         const { data: p } = await sb.from('personeller').select('*').eq('id', data.user.id).single()
-        setPersonel(p || { ad_soyad: data.user.email, rol: 'yonetici' })
+        setPersonel(p || { ad_soyad: data.user.email, rol: 'operasyon' }) // güvenli default: operasyon
       }
     })
   }, [])
@@ -48,8 +49,8 @@ export default function Sidebar() {
     router.push('/giris'); router.refresh()
   }
 
-  const rol = personel?.rol || 'yonetici'
-  const izinli = ERISIM[rol] || ERISIM.yonetici
+  const rol = personel?.rol || 'operasyon'
+  const izinli = ERISIM[rol] || ERISIM.operasyon
   const linkler = TUM_LINKLER.filter(l => izinli.includes(l.href))
 
   return (
@@ -85,7 +86,8 @@ export default function Sidebar() {
             return (
               <Link key={l.href} href={l.href} onClick={()=>setAcik(false)}
                 style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 14px', borderRadius:10, textDecoration:'none',
-                  background: aktif ? 'var(--accent-soft)' : 'transparent', color: aktif ? 'var(--accent)' : 'var(--text-dim)',
+                  background: aktif ? 'var(--accent-soft)' : 'transparent',
+                  color: aktif ? 'var(--accent)' : 'var(--text-dim)',
                   fontSize:14, fontWeight: aktif ? 600 : 500, transition:'all .12s' }}>
                 <Icon size={18} /> {l.label}
               </Link>
@@ -93,7 +95,6 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* KULLANICI */}
         <div style={{ padding:'14px 16px', borderTop:'1px solid var(--border)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
             <div style={{ width:36, height:36, borderRadius:10, background:'var(--accent-soft)', color:'var(--accent)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:600, fontSize:14, flexShrink:0 }}>

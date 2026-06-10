@@ -2,38 +2,40 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Building2, HeartPulse, FileText, Wallet, TrendingUp, AlertTriangle, ArrowUpRight } from 'lucide-react'
+import { Building2, HeartPulse, FileText, Wallet, TrendingUp, AlertTriangle, ArrowUpRight, MapPin, Bell, X } from 'lucide-react'
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip, BarChart, Bar, Cell } from 'recharts'
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<any>({ firma:0, hasta:0, teklif:0, acikBakiye:0, vadeGecen:0, aylikCiro:0 })
+  const [stats, setStats] = useState<any>({ firma:0, hasta:0, teklif:0, acikBakiye:0, vadeGecen:0, aylikCiro:0, ziyaret:0 })
   const [ciroData, setCiroData] = useState<any[]>([])
   const [vadeData, setVadeData] = useState<any[]>([])
+  const [uyarilar, setUyarilar] = useState<any[]>([])
   const [yukleniyor, setYukleniyor] = useState(true)
 
   useEffect(() => {
     const sb = createClient()
     async function yukle() {
-      const [firma, hasta, teklif, cariler] = await Promise.all([
+      const buAy = new Date().toISOString().slice(0,7)
+      const ayBas = buAy + '-01'
+      const ayBit = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).toISOString().slice(0,10)
+
+      const [firma, hasta, teklif, cariler, ziyaret, uyari] = await Promise.all([
         sb.from('firmalar').select('id', { count:'exact', head:true }),
         sb.from('hasta_kayitlari').select('ucret, tarih'),
         sb.from('teklifler').select('id, surec_durumu'),
         sb.from('cariler').select('unvan, acik_bakiye, vadesi_gecen_tutar, gecen_gun_sayisi'),
+        sb.from('ziyaretler').select('id', { count:'exact', head:true }).gte('tarih', ayBas).lte('tarih', ayBit),
+        sb.from('borcuyarilari').select('*').eq('goruldu', false).order('gecen_gun_sayisi', { ascending:false }).limit(10),
       ])
 
       const hastaList = hasta.data || []
-      const aylikCiro = hastaList.reduce((s:number,h:any)=>s+(Number(h.ucret)||0),0)
+      const aylikCiro = hastaList.filter(h=>h.tarih>=ayBas&&h.tarih<=ayBit).reduce((s:number,h:any)=>s+(Number(h.ucret)||0),0)
       const acikBakiye = (cariler.data||[]).reduce((s:number,c:any)=>s+(Number(c.acik_bakiye)||0),0)
       const vadeGecen = (cariler.data||[]).reduce((s:number,c:any)=>s+(Number(c.vadesi_gecen_tutar)||0),0)
 
-      setStats({
-        firma: firma.count||0,
-        hasta: hastaList.length,
-        teklif: (teklif.data||[]).filter((t:any)=>t.surec_durumu==='Beklemede').length,
-        acikBakiye, vadeGecen, aylikCiro
-      })
+      setStats({ firma:firma.count||0, hasta:hastaList.length, teklif:(teklif.data||[]).filter((t:any)=>t.surec_durumu==='Beklemede').length, acikBakiye, vadeGecen, aylikCiro, ziyaret:ziyaret.count||0 })
+      setUyarilar(uyari.data || [])
 
-      // Aylık ciro grafiği (hasta kayıtlarından)
       const aylar: Record<string, number> = {}
       hastaList.forEach((h:any) => {
         if (!h.tarih) return
@@ -42,25 +44,29 @@ export default function Dashboard() {
       })
       setCiroData(Object.entries(aylar).map(([ay,tutar])=>({ ay, tutar })))
 
-      // En riskli cariler
-      const riskli = (cariler.data||[])
-        .filter((c:any)=>c.vadesi_gecen_tutar>0)
-        .sort((a:any,b:any)=>b.vadesi_gecen_tutar-a.vadesi_gecen_tutar)
-        .slice(0,5)
-        .map((c:any)=>({ isim: c.unvan?.slice(0,16), tutar: Number(c.vadesi_gecen_tutar), gun: c.gecen_gun_sayisi }))
+      const riskli = (cariler.data||[]).filter((c:any)=>c.vadesi_gecen_tutar>0)
+        .sort((a:any,b:any)=>b.vadesi_gecen_tutar-a.vadesi_gecen_tutar).slice(0,5)
+        .map((c:any)=>({ isim:c.unvan?.slice(0,16), tutar:Number(c.vadesi_gecen_tutar), gun:c.gecen_gun_sayisi }))
       setVadeData(riskli)
       setYukleniyor(false)
     }
     yukle()
   }, [])
 
+  async function uyariKapat(id: string) {
+    const sb = createClient()
+    await sb.from('borcuyarilari').update({ goruldu:true }).eq('id', id)
+    setUyarilar(u => u.filter(x => x.id !== id))
+  }
+
   const tl = (n:number) => new Intl.NumberFormat('tr-TR', { maximumFractionDigits:0 }).format(n) + ' ₺'
 
   const kartlar = [
-    { label:'Kayıtlı Firma', val: stats.firma, icon: Building2, renk:'var(--blue)', soft:'var(--blue-soft)', href:'/firmalar' },
-    { label:'Hasta Kaydı', val: stats.hasta, icon: HeartPulse, renk:'var(--green)', soft:'var(--green-soft)', href:'/saglik' },
-    { label:'Bekleyen Teklif', val: stats.teklif, icon: FileText, renk:'var(--amber)', soft:'var(--amber-soft)', href:'/teklifler' },
-    { label:'Açık Bakiye', val: tl(stats.acikBakiye), icon: Wallet, renk:'var(--accent)', soft:'var(--accent-soft)', href:'/tahsilat' },
+    { label:'Kayıtlı Firma',   val:stats.firma,           icon:Building2,  renk:'var(--blue)',   soft:'var(--blue-soft)',   href:'/firmalar' },
+    { label:'Hasta Kaydı',     val:stats.hasta,           icon:HeartPulse, renk:'var(--green)',  soft:'var(--green-soft)',  href:'/saglik' },
+    { label:'Bekleyen Teklif', val:stats.teklif,          icon:FileText,   renk:'var(--amber)',  soft:'var(--amber-soft)',  href:'/teklifler' },
+    { label:'Açık Bakiye',     val:tl(stats.acikBakiye),  icon:Wallet,     renk:'var(--accent)', soft:'var(--accent-soft)', href:'/tahsilat' },
+    { label:'Bu Ay Ziyaret',   val:stats.ziyaret,         icon:MapPin,     renk:'var(--blue)',   soft:'var(--blue-soft)',   href:'/ziyaretler' },
   ]
 
   return (
@@ -73,7 +79,7 @@ export default function Dashboard() {
       </div>
 
       {/* METRİK KARTLARI */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:16, marginBottom:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:16, marginBottom:24 }}>
         {kartlar.map((k,i) => {
           const Icon = k.icon
           return (
@@ -93,8 +99,47 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* UYARI: VADESİ GEÇEN */}
-      {stats.vadeGecen > 0 && (
+      {/* AYLIK CİRO KARTI */}
+      <div className="card" style={{ padding:'16px 20px', marginBottom:16, display:'flex', alignItems:'center', gap:16 }}>
+        <TrendingUp size={20} color="var(--green)" />
+        <div>
+          <span style={{ fontSize:13, color:'var(--text-dim)' }}>Bu Ay Ciro</span>
+          <span style={{ fontFamily:'Sora,sans-serif', fontSize:20, fontWeight:700, color:'var(--green)', marginLeft:12 }}>{tl(stats.aylikCiro)}</span>
+        </div>
+      </div>
+
+      {/* BORÇ UYARILARI */}
+      {uyarilar.length > 0 && (
+        <div style={{ marginBottom:24 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+            <Bell size={16} color="var(--red)" />
+            <span style={{ fontWeight:600, fontSize:14, color:'var(--red)' }}>Borç Uyarıları</span>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {uyarilar.map(u => (
+              <div key={u.id} className="card" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, padding:'14px 18px', borderColor:`rgba(248,113,113,${u.esik>=90?0.4:u.esik>=60?0.25:0.15})`, background:'var(--red-soft)' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                  <AlertTriangle size={18} color="var(--red)" />
+                  <div>
+                    <span style={{ fontWeight:600 }}>{u.unvan}</span>
+                    <span style={{ fontSize:13, color:'var(--red)', marginLeft:10 }}>{tl(Number(u.vadesi_gecen_tutar))} · {u.gecen_gun_sayisi} gün</span>
+                  </div>
+                </div>
+                <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                  <span style={{ fontSize:11, background:`rgba(248,113,113,${u.esik>=90?0.3:0.15})`, color:'var(--red)', padding:'3px 8px', borderRadius:6, fontWeight:600 }}>
+                    {u.esik}+ gün eşiği
+                  </span>
+                  <Link href="/tahsilat" style={{ fontSize:12, color:'var(--red)', textDecoration:'none', fontWeight:500 }}>Tahsilat →</Link>
+                  <button onClick={()=>uyariKapat(u.id)} style={{ background:'none', border:'none', color:'var(--text-faint)', cursor:'pointer', padding:2 }}><X size={14} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* VADESİ GEÇEN UYARI */}
+      {stats.vadeGecen > 0 && uyarilar.length === 0 && (
         <Link href="/tahsilat" className="card" style={{ display:'flex', alignItems:'center', gap:14, padding:'16px 20px', marginBottom:24, textDecoration:'none', color:'inherit', borderColor:'rgba(248,113,113,0.25)', background:'var(--red-soft)' }}>
           <AlertTriangle size={20} color="var(--red)" />
           <div style={{ flex:1 }}>
@@ -111,48 +156,46 @@ export default function Dashboard() {
 
         <div className="card" style={{ padding:24 }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-            <h3 style={{ fontFamily:'Sora, sans-serif', fontSize:16, fontWeight:600 }}>Aylık Sağlık Geliri</h3>
+            <h3 style={{ fontFamily:'Sora, sans-serif', fontSize:16, fontWeight:600 }}>Sağlık Geliri</h3>
             <TrendingUp size={18} color="var(--green)" />
           </div>
           <div style={{ height:240 }}>
-            {ciroData.length === 0 ? (
-              <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-faint)', fontSize:14 }}>Henüz veri yok</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={ciroData}>
-                  <defs>
-                    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4}/>
-                      <stop offset="100%" stopColor="#6366f1" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="ay" stroke="#5d5d6b" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={{ background:'#1a1a24', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, fontSize:13 }} labelStyle={{ color:'#9b9ba8' }} formatter={(v:any)=>[tl(v),'Gelir']} />
-                  <Area type="monotone" dataKey="tutar" stroke="#6366f1" strokeWidth={2} fill="url(#g1)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
+            {ciroData.length === 0
+              ? <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-faint)', fontSize:14 }}>Henüz veri yok</div>
+              : <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={ciroData}>
+                    <defs>
+                      <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4}/>
+                        <stop offset="100%" stopColor="#6366f1" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="ay" stroke="#5d5d6b" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={{ background:'#1a1a24', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, fontSize:13 }} labelStyle={{ color:'#9b9ba8' }} formatter={(v:any)=>[tl(v),'Gelir']} />
+                    <Area type="monotone" dataKey="tutar" stroke="#6366f1" strokeWidth={2} fill="url(#g1)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+            }
           </div>
         </div>
 
         <div className="card" style={{ padding:24 }}>
           <h3 style={{ fontFamily:'Sora, sans-serif', fontSize:16, fontWeight:600, marginBottom:20 }}>En Riskli Cariler</h3>
           <div style={{ height:240 }}>
-            {vadeData.length === 0 ? (
-              <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-faint)', fontSize:14 }}>Risk yok</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={vadeData} layout="vertical" margin={{ left:0, right:8 }}>
-                  <XAxis type="number" hide />
-                  <Tooltip contentStyle={{ background:'#1a1a24', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, fontSize:13 }} formatter={(v:any)=>[tl(v),'Vade Aşımı']} cursor={{ fill:'rgba(255,255,255,0.03)' }} />
-                  <Bar dataKey="tutar" radius={[0,6,6,0]} barSize={22}>
-                    {vadeData.map((d,i)=>(
-                      <Cell key={i} fill={d.gun > 90 ? '#f87171' : d.gun > 30 ? '#fbbf24' : '#60a5fa'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            {vadeData.length === 0
+              ? <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-faint)', fontSize:14 }}>Risk yok</div>
+              : <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={vadeData} layout="vertical" margin={{ left:0, right:8 }}>
+                    <XAxis type="number" hide />
+                    <Tooltip contentStyle={{ background:'#1a1a24', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, fontSize:13 }} formatter={(v:any)=>[tl(v),'Vade Aşımı']} cursor={{ fill:'rgba(255,255,255,0.03)' }} />
+                    <Bar dataKey="tutar" radius={[0,6,6,0]} barSize={22}>
+                      {vadeData.map((d,i)=>(
+                        <Cell key={i} fill={d.gun>90?'#f87171':d.gun>30?'#fbbf24':'#60a5fa'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+            }
           </div>
         </div>
       </div>
