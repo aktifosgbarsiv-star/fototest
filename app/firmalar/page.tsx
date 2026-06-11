@@ -14,10 +14,20 @@ export default function Firmalar() {
   const [modal, setModal] = useState(false)
   const [duzenle, setDuzenle] = useState<any>(null)
   const [detay, setDetay] = useState<any>(null)
-  const [sekme, setSekme] = useState<'temel'|'atama'|'ucret'|'ziyaret'>('temel')
+  const [sekme, setSekme] = useState<'temel'|'atama'|'ucret'|'ziyaret'|'katip'>('temel')
+  const [katipSozlesmeler, setKatipSozlesmeler] = useState<any[]>([])
+  const [katipForm, setKatipForm] = useState<any>(bosKatipForm())
+  const [katipYukleniyor, setKatipYukleniyor] = useState(false)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [hata, setHata] = useState('')
   const [form, setForm] = useState<any>(bosForm())
+
+  function bosKatipForm() {
+    return { sozlesme_id:'', sozlesme_turu:'İGU', gorevlendirilen_tc:'', gorevlendirilen_ad:'', sertifika_tipi:'C Sınıfı', sertifika_no:'', calisma_suresi_dk:'', baslangic_tarihi:'', bitis_tarihi:'', sozlesme_durumu:'Devam Ediyor' }
+  }
+
+  // sekme değişince katip yükle
+  useEffect(() => { if (sekme==='katip' && duzenle) katipYukle(duzenle.id) }, [sekme, duzenle])
 
   function bosForm() {
     return {
@@ -78,6 +88,26 @@ export default function Firmalar() {
     await sb.from('firmalar').delete().eq('id', id); yukle()
   }
 
+  async function katipYukle(firma_id: string) {
+    const { data } = await sb.from('katip_sozlesmeleri').select('*').eq('firma_id', firma_id).order('sozlesme_turu')
+    setKatipSozlesmeler(data || [])
+  }
+
+  async function katipKaydet(firma_id: string) {
+    if (!katipForm.gorevlendirilen_ad) return
+    setKatipYukleniyor(true)
+    await sb.from('katip_sozlesmeleri').insert({ firma_id, sgk_sicil: duzenle?.sgk_sicil, ...katipForm, sozlesme_id: katipForm.sozlesme_id ? Number(katipForm.sozlesme_id) : null, calisma_suresi_dk: Number(katipForm.calisma_suresi_dk)||null, baslangic_tarihi: katipForm.baslangic_tarihi||null, bitis_tarihi: katipForm.bitis_tarihi||null })
+    setKatipForm(bosKatipForm())
+    katipYukle(firma_id)
+    setKatipYukleniyor(false)
+  }
+
+  async function katipSil(id: string, firma_id: string) {
+    if (!confirm('Silinsin mi?')) return
+    await sb.from('katip_sozlesmeleri').delete().eq('id', id)
+    katipYukle(firma_id)
+  }
+
   function duzenleAc(f: any) {
     setDuzenle(f)
     setSekme('temel')
@@ -108,11 +138,12 @@ export default function Firmalar() {
 
   const tl = (n:number) => n > 0 ? new Intl.NumberFormat('tr-TR').format(n) + ' ₺' : '—'
 
-  const SEKMELER: {key: 'temel'|'atama'|'ucret'|'ziyaret', label: string}[] = [
+  const SEKMELER: {key: 'temel'|'atama'|'ucret'|'ziyaret'|'katip', label: string}[] = [
     { key:'temel', label:'Temel Bilgiler' },
     { key:'atama', label:'Atama' },
     { key:'ucret', label:'Ücretlendirme' },
     { key:'ziyaret', label:'Ziyaret' },
+    { key:'katip', label:'Katip Sözleşmeleri' },
   ]
 
   return (
@@ -327,6 +358,49 @@ export default function Firmalar() {
                 <div><label style={lbl}>Uzman Periyot</label><input value={form.ziyaret_periyodu} onChange={e=>setForm({...form, ziyaret_periyodu:e.target.value})} placeholder="Aylık / 3 Aylık" /></div>
                 <div><label style={lbl}>İH Giden</label><input value={form.gorevli_ih_giden} onChange={e=>setForm({...form, gorevli_ih_giden:e.target.value})} /></div>
                 <div><label style={lbl}>İH Periyot</label><input value={form.ih_periyot} onChange={e=>setForm({...form, ih_periyot:e.target.value})} placeholder="Aylık / 3 Aylık" /></div>
+              </div>
+            )}
+
+            {sekme === 'katip' && duzenle && (
+              <div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+                  {[
+                    { key:'sozlesme_turu', label:'Tür', type:'select', opts:['İGU','İH','DSP','BHL'] },
+                    { key:'sozlesme_id', label:'Katip ID', type:'text', ph:'25821971' },
+                    { key:'gorevlendirilen_ad', label:'Görevlendirilen *', type:'text', ph:'Ad Soyad' },
+                    { key:'gorevlendirilen_tc', label:'TC No', type:'text', ph:'12345...' },
+                    { key:'sertifika_tipi', label:'Sertifika Tipi', type:'select', opts:['A Sınıfı','B Sınıfı','C Sınıfı','İH Sertifikası','DSP Sertifikası'] },
+                    { key:'sertifika_no', label:'Sertifika No', type:'text', ph:'İGU-406910' },
+                    { key:'calisma_suresi_dk', label:'Süre (dk/ay)', type:'number', ph:'70' },
+                    { key:'sozlesme_durumu', label:'Durum', type:'select', opts:['Devam Ediyor','Sona Erdi','Askıya Alındı'] },
+                    { key:'baslangic_tarihi', label:'Başlangıç', type:'date' },
+                    { key:'bitis_tarihi', label:'Bitiş', type:'date' },
+                  ].map((f:any) => (
+                    <div key={f.key}>
+                      <label style={lbl}>{f.label}</label>
+                      {f.type==='select'
+                        ? <select value={(katipForm as any)[f.key]} onChange={e=>setKatipForm({...katipForm,[f.key]:e.target.value})}>{f.opts.map((o:string)=><option key={o}>{o}</option>)}</select>
+                        : <input type={f.type||'text'} value={(katipForm as any)[f.key]} onChange={e=>setKatipForm({...katipForm,[f.key]:e.target.value})} placeholder={f.ph||''}/>
+                      }
+                    </div>
+                  ))}
+                </div>
+                <button className="btn" style={{ width:'100%', justifyContent:'center', marginBottom:20 }} onClick={()=>katipKaydet(duzenle.id)} disabled={katipYukleniyor}>
+                  + Sözleşme Ekle
+                </button>
+                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                  {katipSozlesmeler.map(k=>(
+                    <div key={k.id} style={{ background:'var(--surface-2)', borderRadius:10, padding:'12px 14px', display:'flex', justifyContent:'space-between', gap:10, flexWrap:'wrap' }}>
+                      <div>
+                        <div style={{ fontWeight:600, fontSize:13, color:k.sozlesme_turu==='İGU'?'var(--blue)':k.sozlesme_turu==='İH'?'var(--green)':'var(--amber)' }}>{k.sozlesme_turu} — {k.gorevlendirilen_ad}</div>
+                        <div style={{ fontSize:12, color:'var(--text-faint)', marginTop:2 }}>{k.sertifika_no} · {k.calisma_suresi_dk}dk/ay · {k.sozlesme_durumu}</div>
+                        {k.baslangic_tarihi && <div style={{ fontSize:11, color:'var(--text-faint)' }}>{new Date(k.baslangic_tarihi+'T00:00:00').toLocaleDateString('tr-TR')} {k.bitis_tarihi ? '→ '+new Date(k.bitis_tarihi+'T00:00:00').toLocaleDateString('tr-TR') : ''}</div>}
+                      </div>
+                      <button onClick={()=>katipSil(k.id,duzenle.id)} style={{ background:'none', border:'none', color:'var(--text-faint)', cursor:'pointer', padding:4, fontSize:13 }}>🗑️</button>
+                    </div>
+                  ))}
+                  {katipSozlesmeler.length===0 && <div style={{ fontSize:13, color:'var(--text-faint)', textAlign:'center', padding:20 }}>Henüz sözleşme eklenmemiş</div>}
+                </div>
               </div>
             )}
 

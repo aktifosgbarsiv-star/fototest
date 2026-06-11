@@ -355,12 +355,8 @@ export default function Fatura() {
 
                 {/* KATİP SÖZLEŞMELERİ */}
                 <div>
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+                  <div style={{ marginBottom:8 }}>
                     <div style={{ fontSize:12, color:'var(--text-faint)', fontWeight:500 }}>Katip Sözleşmeleri</div>
-                    <button onClick={()=>{ setKatipModal(firma); setKatipForm(bosKatipForm()) }}
-                      style={{ fontSize:12, background:'none', border:'none', color:'var(--accent)', cursor:'pointer', display:'flex', alignItems:'center', gap:4, padding:0 }}>
-                      <Plus size={12}/> Sözleşme Ekle
-                    </button>
                   </div>
                   {katipSoz.length === 0 ? (
                     <div style={{ fontSize:12, color:'var(--text-faint)', fontStyle:'italic' }}>
