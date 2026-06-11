@@ -37,7 +37,7 @@ export default function Firmalar() {
       gorevli_igu:'', igu_id:'', igu_atama_tarihi:'', gorevli_ih:'', ih_id:'', ih_atama_tarihi:'',
       gorevli_dsp:'', dsp_id:'', bhl_atama:'', atama_aciklama:'', dr_sure:'', uzman_sure:'',
       ziyaret_periyodu:'', gorevli_ih_giden:'', ih_periyot:'',
-      kisi_basi_ucret:'', kisi_basi_ucret_yeni:'', paket_3000:'', paket_3434:''
+      kisi_basi_ucret:'', kisi_basi_ucret_yeni:'', paket_2808:'', paket_3000:'', paket_3434:''
     }
   }
 
@@ -66,6 +66,7 @@ export default function Firmalar() {
       uzman_sure: Number(form.uzman_sure)||null,
       kisi_basi_ucret: Number(form.kisi_basi_ucret)||0,
       kisi_basi_ucret_yeni: Number(form.kisi_basi_ucret_yeni)||0,
+      paket_2808: Number(form.paket_2808)||0,
       paket_3000: Number(form.paket_3000)||0,
       paket_3434: Number(form.paket_3434)||0,
       igu_atama_tarihi: form.igu_atama_tarihi||null,
@@ -130,7 +131,7 @@ export default function Firmalar() {
       gorevli_ih_giden: f.gorevli_ih_giden||'', ih_periyot: f.ih_periyot||'',
       kisi_basi_ucret: f.kisi_basi_ucret?.toString()||'',
       kisi_basi_ucret_yeni: f.kisi_basi_ucret_yeni?.toString()||'',
-      paket_3000: f.paket_3000?.toString()||'', paket_3434: f.paket_3434?.toString()||''
+      paket_2808: f.paket_2808?.toString()||'', paket_3000: f.paket_3000?.toString()||'', paket_3434: f.paket_3434?.toString()||''
     })
   }
 
@@ -345,6 +346,18 @@ export default function Firmalar() {
                 <div><label style={lbl}>Uzman Süre (dk)</label><input type="number" value={form.uzman_sure} onChange={e=>setForm({...form, uzman_sure:e.target.value})} /></div>
                 <div><label style={lbl}>Dr Süre (dk)</label><input type="number" value={form.dr_sure} onChange={e=>setForm({...form, dr_sure:e.target.value})} /></div>
                 <div style={{ gridColumn:'1/3' }}><label style={lbl}>Atama Açıklaması</label><textarea rows={2} value={form.atama_aciklama} onChange={e=>setForm({...form, atama_aciklama:e.target.value})} /></div>
+                {duzenle && katipSozlesmeler.length > 0 && (
+                  <div style={{ gridColumn:'1/3', background:'var(--surface-2)', borderRadius:10, padding:'10px 14px' }}>
+                    <div style={{ fontSize:11, color:'var(--text-faint)', marginBottom:8, fontWeight:600 }}>ATANAN PERSONEL SERTİFİKALARI</div>
+                    <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                      {katipSozlesmeler.filter(k=>k.firma_id===duzenle.id).map(k=>(
+                        <span key={k.id} style={{ fontSize:12, padding:'3px 10px', borderRadius:6, background:'var(--accent-soft)', color:'var(--accent)', fontWeight:500 }}>
+                          {k.sozlesme_turu}: {k.sertifika_tipi}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -352,6 +365,7 @@ export default function Firmalar() {
               <div className="modal-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 <div><label style={lbl}>Kişi Başı Ücret (₺)</label><input type="number" value={form.kisi_basi_ucret} onChange={e=>setForm({...form, kisi_basi_ucret:e.target.value})} /></div>
                 <div><label style={lbl}>Kişi Başı (Yeni) (₺)</label><input type="number" value={form.kisi_basi_ucret_yeni} onChange={e=>setForm({...form, kisi_basi_ucret_yeni:e.target.value})} /></div>
+                <div><label style={lbl}>Paket 2808 (₺)</label><input type="number" value={form.paket_2808} onChange={e=>setForm({...form, paket_2808:e.target.value})} /></div>
                 <div><label style={lbl}>Paket 3000 (₺)</label><input type="number" value={form.paket_3000} onChange={e=>setForm({...form, paket_3000:e.target.value})} /></div>
                 <div><label style={lbl}>Paket 3434 (₺)</label><input type="number" value={form.paket_3434} onChange={e=>setForm({...form, paket_3434:e.target.value})} /></div>
               </div>
@@ -362,6 +376,38 @@ export default function Firmalar() {
                 <div><label style={lbl}>Uzman Periyot</label><input value={form.ziyaret_periyodu} onChange={e=>setForm({...form, ziyaret_periyodu:e.target.value})} placeholder="Aylık / 3 Aylık" /></div>
                 <div><label style={lbl}>İH Giden</label><input value={form.gorevli_ih_giden} onChange={e=>setForm({...form, gorevli_ih_giden:e.target.value})} /></div>
                 <div><label style={lbl}>İH Periyot</label><input value={form.ih_periyot} onChange={e=>setForm({...form, ih_periyot:e.target.value})} placeholder="Aylık / 3 Aylık" /></div>
+                {duzenle && (() => {
+                  const aylar = ['01','02','03','04','05','06','07','08','09','10','11','12']
+                  const ayAd = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
+                  const yil = new Date().getFullYear()
+                  const ziyaretMap: Record<string,any> = duzenle.aylik_ziyaretler || {}
+                  return (
+                    <div style={{ gridColumn:'1/3', marginTop:8 }}>
+                      <div style={{ fontSize:11, color:'var(--text-faint)', fontWeight:600, marginBottom:10, textTransform:'uppercase', letterSpacing:0.5 }}>
+                        {yil} Yılı Aylık Ziyaret Özeti
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:6 }}>
+                        {aylar.map((ay, i) => {
+                          const key = `${yil}-${ay}`
+                          const z = ziyaretMap[key]
+                          return (
+                            <div key={ay} style={{ background:'var(--surface-2)', borderRadius:8, padding:'8px 10px', textAlign:'center' }}>
+                              <div style={{ fontSize:11, color:'var(--text-faint)', marginBottom:4 }}>{ayAd[i]}</div>
+                              {z ? (
+                                <>
+                                  <div style={{ fontSize:11, color:'var(--green)', fontWeight:600 }}>✓</div>
+                                  <div style={{ fontSize:10, color:'var(--text-dim)', marginTop:2 }}>{z.ziyaret_eden || ''}</div>
+                                </>
+                              ) : (
+                                <div style={{ fontSize:11, color:'var(--text-faint)' }}>—</div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )}
 

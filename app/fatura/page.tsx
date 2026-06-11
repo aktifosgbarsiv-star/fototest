@@ -32,6 +32,7 @@ export default function Fatura() {
   const [basari, setBasari] = useState('')
   const [katipModal, setKatipModal] = useState<any>(null)
   const [oncekiAyMap, setOncekiAyMap] = useState<Record<string,number>>({})
+  const [yillikMap, setYillikMap] = useState<Record<string,Record<string,any>>>({})
   const [katipForm, setKatipForm] = useState<any>(bosKatipForm())
 
   // Aktif ay — varsayılan bu ay
@@ -58,26 +59,29 @@ export default function Fatura() {
     setYukleniyor(true)
     setHata('')
     const onceki = oncekiAy(ay)
-    const [fRes, dRes, kRes, oncekiRes] = await Promise.all([
-      // Tüm aktif firmalar — kişi başı ücret ve tehlike bilgisiyle
-      sb.from('firmalar').select('id, unvan, isg_katip_unvan, sgk_sicil, tehlike_sinifi, calisan_sayisi, kisi_basi_ucret, kisi_basi_ucret_yeni, fatura, fatura_aciklama, bolge, gorevli_igu, gorevli_ih').order('unvan'),
-      // Bu ay için mevcut dönem kayıtları (varsa)
+    const yil = ay.slice(0,4)
+    const [fRes, dRes, kRes, oncekiRes, yilRes] = await Promise.all([
+      sb.from('firmalar').select('id, unvan, isg_katip_unvan, sgk_sicil, tehlike_sinifi, calisan_sayisi, kisi_basi_ucret, kisi_basi_ucret_yeni, paket_2808, fatura, fatura_aciklama, bolge, gorevli_igu, gorevli_ih').order('unvan'),
       sb.from('donem_takip').select('*').eq('ay', ay),
-      // Tüm Katip sözleşmeleri
       sb.from('katip_sozlesmeleri').select('*').order('sozlesme_turu'),
-      // Bir önceki ayın dönem kayıtları — onceki_ay_calisan için
       sb.from('donem_takip').select('firma_id, calisan_sayisi').eq('ay', onceki),
+      // Tüm yılın kayıtları — aylık geçmiş için
+      sb.from('donem_takip').select('firma_id, ay, calisan_sayisi, fatura_tutari, fatura_kesildi').gte('ay', yil+'-01').lte('ay', yil+'-12'),
     ])
     if (fRes.error) { setHata('Veriler yüklenemedi'); setYukleniyor(false); return }
     setFirmalar(fRes.data || [])
     setKatipSozlesmeler(kRes.data || [])
-    // Bu ay kaydı yoksa onceki aydan otomatik doldur
     const oncekiMap: Record<string, number> = {}
     ;(oncekiRes.data || []).forEach((d: any) => { oncekiMap[d.firma_id] = d.calisan_sayisi })
-    const buAyDonemler = dRes.data || []
-    // Bu ay kaydı olmayan firmalar için onceki ay verisini pre-fill et (sadece state'de, DB'ye yazmıyoruz)
+    // Yıllık geçmiş map: firma_id -> {ay -> kayıt}
+    const yilMap: Record<string, Record<string, any>> = {}
+    ;(yilRes.data || []).forEach((d: any) => {
+      if (!yilMap[d.firma_id]) yilMap[d.firma_id] = {}
+      yilMap[d.firma_id][d.ay] = d
+    })
+    setYillikMap(yilMap)
     setOncekiAyMap(oncekiMap)
-    setDonemler(buAyDonemler)
+    setDonemler(dRes.data || [])
     setYukleniyor(false)
   }
 
@@ -258,7 +262,7 @@ export default function Fatura() {
             const sur = sureler(firma.tehlike_sinifi, calisan)
             const drSure = donem?.dr_sure_dk ?? sur.dr
             const uzmanSure = donem?.uzman_sure_dk ?? sur.uzman
-            const oncekiFark = donem?.farak ?? null
+            const oncekiFark = donem?.fark ?? null
             const kesildi = donem?.fatura_kesildi || false
             const katipSoz = katipBul(firma)
 
@@ -328,6 +332,9 @@ export default function Fatura() {
                     <div style={{ fontSize:18, fontWeight:700 }}>{tl(kisiBasiUcret)}</div>
                     {firma.kisi_basi_ucret_yeni > 0 && (
                       <div style={{ fontSize:11, color:'var(--text-faint)', marginTop:2 }}>Yeni: {tl(Number(firma.kisi_basi_ucret_yeni))}</div>
+                    )}
+                    {firma.paket_2808 > 0 && (
+                      <div style={{ fontSize:11, color:'var(--text-faint)', marginTop:2 }}>2808: {tl(Number(firma.paket_2808))}</div>
                     )}
                   </div>
 
@@ -407,6 +414,43 @@ export default function Fatura() {
                     {firma.fatura_aciklama && <span style={{ color:'var(--amber)' }}>{firma.fatura_aciklama}</span>}
                   </div>
                 )}
+
+                {/* YILLIK ÇALIŞAN GEÇMİŞİ — Excel C–H kolonları */}
+                {(() => {
+                  const yil = ay.slice(0,4)
+                  const aylar = [
+                    {key:`${yil}-01`,ad:'Oca'},{key:`${yil}-02`,ad:'Şub'},{key:`${yil}-03`,ad:'Mar'},
+                    {key:`${yil}-04`,ad:'Nis'},{key:`${yil}-05`,ad:'May'},{key:`${yil}-06`,ad:'Haz'},
+                    {key:`${yil}-07`,ad:'Tem'},{key:`${yil}-08`,ad:'Ağu'},{key:`${yil}-09`,ad:'Eyl'},
+                    {key:`${yil}-10`,ad:'Eki'},{key:`${yil}-11`,ad:'Kas'},{key:`${yil}-12`,ad:'Ara'},
+                  ]
+                  const firmaYil = yillikMap[firma.id] || {}
+                  const dolmuAylar = aylar.filter(a => firmaYil[a.key])
+                  if (dolmuAylar.length === 0) return null
+                  return (
+                    <div style={{ marginTop:12, paddingTop:10, borderTop:'1px solid var(--border)' }}>
+                      <div style={{ fontSize:11, color:'var(--text-faint)', fontWeight:600, marginBottom:8, textTransform:'uppercase', letterSpacing:0.5 }}>{yil} Çalışan Geçmişi</div>
+                      <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                        {aylar.map(a => {
+                          const d = firmaYil[a.key]
+                          const aktif = a.key === ay
+                          return (
+                            <div key={a.key} style={{
+                              background: aktif ? 'var(--accent-soft)' : d ? 'var(--surface-2)' : 'transparent',
+                              border: `1px solid ${aktif ? 'var(--accent)' : d ? 'var(--border)' : 'transparent'}`,
+                              borderRadius:8, padding:'6px 10px', minWidth:52, textAlign:'center',
+                              opacity: d ? 1 : 0.3
+                            }}>
+                              <div style={{ fontSize:10, color: aktif ? 'var(--accent)' : 'var(--text-faint)' }}>{a.ad}</div>
+                              <div style={{ fontSize:13, fontWeight:700, color: aktif ? 'var(--accent)' : 'var(--text)' }}>{d?.calisan_sayisi ?? '—'}</div>
+                              {d?.fatura_kesildi && <div style={{ fontSize:9, color:'var(--green)' }}>✓</div>}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )
           })}
