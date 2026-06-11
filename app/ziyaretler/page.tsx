@@ -27,7 +27,7 @@ export default function Ziyaretler() {
     const [ayBas, ayBit] = ayAraligi(ay)
     const [zRes, fRes, pRes] = await Promise.all([
       sb.from('ziyaretler').select('*, firmalar(unvan, tehlike_sinifi), personeller(ad_soyad, rol)').gte('tarih', ayBas).lte('tarih', ayBit).order('tarih', { ascending:false }),
-      sb.from('firmalar').select('id, unvan, ziyaret_periyodu, tehlike_sinifi, aylik_ziyaretler').order('unvan'),
+      sb.from('firmalar').select('id, unvan, ziyaret_periyodu, tehlike_sinifi, aylik_ziyaretler, gorevli_ih').order('unvan'),
       sb.from('personeller').select('id, ad_soyad, rol').eq('aktif', true).order('ad_soyad')
     ])
     if (zRes.error) { setHata('Yüklenemedi'); return }
@@ -145,6 +145,14 @@ export default function Ziyaretler() {
                     <td><span style={{ background:'var(--green-soft)', color:'var(--green)', padding:'3px 10px', borderRadius:6, fontSize:13, fontWeight:600 }}>{ih}</span></td>
                     <td><span style={{ background:'var(--amber-soft)', color:'var(--amber)', padding:'3px 10px', borderRadius:6, fontSize:13, fontWeight:600 }}>{dsp}</span></td>
                     <td style={{ fontWeight:700 }}>{igu+ih+dsp}</td>
+                    <td>
+                      {ih > 0
+                        ? <span style={{ color:'var(--green)', fontSize:12, fontWeight:600 }}>✓ Gidildi</span>
+                        : f.gorevli_ih
+                          ? <span style={{ color:'var(--red)', fontSize:12 }}>✗ {f.gorevli_ih || '—'}</span>
+                          : <span style={{ color:'var(--text-faint)', fontSize:12 }}>Atanmamış</span>
+                      }
+                    </td>
                   </tr>
                 )
               })}
