@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { ChevronLeft, ChevronRight, Check, AlertTriangle, Info, FileText, Plus, X, Clock } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, AlertTriangle, Info, FileText, Plus, X, Clock, Upload } from 'lucide-react'
 
 /*
   FATURA SAYFASI — MUHASEBE MODÜLÜ
@@ -31,6 +31,10 @@ export default function Fatura() {
   const [hata, setHata] = useState('')
   const [basari, setBasari] = useState('')
   const [katipModal, setKatipModal] = useState<any>(null)
+  const [importModal, setImportModal] = useState(false)
+  const [importOnizleme, setImportOnizleme] = useState<any[]>([])
+  const [importYukleniyor, setImportYukleniyor] = useState(false)
+  const [importHata, setImportHata] = useState('')
   const [oncekiAyMap, setOncekiAyMap] = useState<Record<string,number>>({})
   const [yillikMap, setYillikMap] = useState<Record<string,Record<string,any>>>({})
   const [katipForm, setKatipForm] = useState<any>(bosKatipForm())
@@ -175,6 +179,93 @@ export default function Fatura() {
     yukle()
   }
 
+  // Katip Excel import — SGK sicil eşleştirme
+  async function katipExcelOku(file: File) {
+    setImportHata('')
+    setImportYukleniyor(true)
+    setImportOnizleme([])
+    try {
+      const buf = await file.arrayBuffer()
+      // XLSX'i manuel parse et — zip içindeki shared strings + sheet XML
+      // SheetJS ile parse et
+      const XLSX = await import('xlsx')
+      const wb = XLSX.read(buf, { type: 'array' })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const rows: Record<string, string>[] = XLSX.utils.sheet_to_json(ws, { defval: '' })
+
+      // SGK + çalışan kolonlarını bul
+      const SGK_COL = 'Hizmet Alan İşyeri SGK/DETSİS No'
+      const CALISAN_COL = 'Hizmet Alan İşyeri Çalışan Sayısı'
+      if (rows.length === 0 || !(SGK_COL in rows[0])) {
+        setImportHata('Bu dosya Katip export formatında değil — "Hizmet Alan İşyeri SGK/DETSİS No" kolonu bulunamadı')
+        setImportYukleniyor(false)
+        return
+      }
+
+      // Tekil SGK → max çalışan sayısı (birden fazla sözleşme olabilir)
+      const sgkMap: Record<string, number> = {}
+      rows.forEach((r: any) => {
+        const sgk = String(r[SGK_COL]||'').trim()
+        const c = Number(r[CALISAN_COL])
+        if (sgk && c > 0) sgkMap[sgk] = Math.max(sgkMap[sgk]||0, c)
+      })
+
+      // Firmalarla eşleştir
+      const onizleme: any[] = []
+      firmalar.forEach(f => {
+        if (!f.sgk_sicil) return
+        const sgk = f.sgk_sicil.trim()
+        if (sgkMap[sgk] !== undefined) {
+          const mevcutDonem = donemBul(f.id)
+          onizleme.push({
+            firma_id: f.id,
+            unvan: f.isg_katip_unvan || f.unvan,
+            sgk_sicil: sgk,
+            yeni_calisan: sgkMap[sgk],
+            mevcut_calisan: mevcutDonem?.calisan_sayisi ?? null,
+            kisi_basi_ucret: Number(f.kisi_basi_ucret)||0,
+          })
+        }
+      })
+
+      if (onizleme.length === 0) {
+        setImportHata('Eşleşen firma bulunamadı — SGK sicil numaraları uyuşmuyor olabilir')
+      } else {
+        setImportOnizleme(onizleme)
+      }
+    } catch(e: any) {
+      setImportHata('Dosya okunamadı: ' + (e?.message||''))
+    }
+    setImportYukleniyor(false)
+  }
+
+  async function importKaydet() {
+    setImportYukleniyor(true)
+    for (const r of importOnizleme) {
+      const mevcut = donemBul(r.firma_id)
+      const oncekiCalisan = oncekiAyMap[r.firma_id] ?? r.mevcut_calisan ?? 0
+      if (mevcut) {
+        await sb.from('donem_takip').update({
+          calisan_sayisi: r.yeni_calisan,
+          kisi_basi_ucret: r.kisi_basi_ucret,
+          onceki_ay_calisan: oncekiCalisan,
+        }).eq('id', mevcut.id)
+      } else {
+        await sb.from('donem_takip').insert({
+          firma_id: r.firma_id,
+          ay,
+          calisan_sayisi: r.yeni_calisan,
+          onceki_ay_calisan: oncekiCalisan,
+          kisi_basi_ucret: r.kisi_basi_ucret,
+        })
+      }
+    }
+    setImportModal(false)
+    setImportOnizleme([])
+    setImportYukleniyor(false)
+    yukle()
+  }
+
   function ayDegistir(fark: number) {
     const [y, m] = ay.split('-').map(Number)
     const d = new Date(y, m - 1 + fark, 1)
@@ -207,6 +298,10 @@ export default function Fatura() {
           </p>
         </div>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <button onClick={()=>{ setImportModal(true); setImportOnizleme([]); setImportHata('') }}
+            style={{ display:'flex', alignItems:'center', gap:6, background:'var(--surface)', border:'1px solid var(--border)', color:'var(--text-dim)', borderRadius:8, padding:'8px 14px', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
+            <Upload size={14}/> Katip Import
+          </button>
           <button onClick={()=>ayDegistir(-1)} style={navBtn}><ChevronLeft size={16}/></button>
           <span style={{ fontFamily:'Sora,sans-serif', fontWeight:700, fontSize:16, minWidth:130, textAlign:'center' }}>{ayLabel}</span>
           <button onClick={()=>ayDegistir(1)} style={navBtn}><ChevronRight size={16}/></button>
@@ -454,6 +549,76 @@ export default function Fatura() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* KATİP IMPORT MODAL */}
+      {importModal && (
+        <div className="modal-overlay" onClick={()=>setImportModal(false)}>
+          <div className="modal-content" style={{ maxWidth:580 }} onClick={e=>e.stopPropagation()}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+              <h2 style={{ fontFamily:'Sora,sans-serif', fontSize:18, fontWeight:600, display:'flex', alignItems:'center', gap:8 }}>
+                <Upload size={18} color="var(--accent)"/> Katip Export Import
+              </h2>
+              <button onClick={()=>setImportModal(false)} style={{ background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer' }}><X size={20}/></button>
+            </div>
+
+            <div style={{ background:'var(--blue-soft)', border:'1px solid rgba(96,165,250,0.2)', borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:13, color:'var(--blue)', lineHeight:1.6 }}>
+              Katip sisteminden indirdiğiniz <strong>Excel export dosyasını</strong> seçin.<br/>
+              SGK sicil numaraları eşleştirilerek çalışan sayıları otomatik doldurulur.
+            </div>
+
+            {importOnizleme.length === 0 ? (
+              <div>
+                <label style={{ display:'block', background:'var(--surface-2)', border:`2px dashed var(--border)`, borderRadius:12, padding:'32px', textAlign:'center', cursor:'pointer' }}>
+                  <input type="file" accept=".xlsx,.xls" style={{ display:'none' }}
+                    onChange={e => { const f = e.target.files?.[0]; if(f) katipExcelOku(f) }}/>
+                  <Upload size={28} color="var(--text-faint)" style={{ margin:'0 auto 12px' }}/>
+                  <div style={{ fontSize:14, color:'var(--text-dim)', marginBottom:4 }}>Excel dosyası seçin</div>
+                  <div style={{ fontSize:12, color:'var(--text-faint)' }}>.xlsx veya .xls</div>
+                </label>
+                {importYukleniyor && <div style={{ textAlign:'center', padding:20, color:'var(--text-faint)', fontSize:13 }}>Okunuyor...</div>}
+                {importHata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginTop:12 }}>{importHata}</div>}
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontSize:13, color:'var(--text-dim)', marginBottom:12 }}>
+                  <strong style={{ color:'var(--green)' }}>{importOnizleme.length} firma</strong> eşleşti — aşağıdaki çalışan sayıları {ayLabel} dönemine yazılacak:
+                </div>
+                <div style={{ maxHeight:320, overflowY:'auto', display:'flex', flexDirection:'column', gap:6, marginBottom:16 }}>
+                  {importOnizleme.map(r => (
+                    <div key={r.firma_id} style={{ background:'var(--surface-2)', borderRadius:8, padding:'10px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:13, fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.unvan}</div>
+                        <div style={{ fontSize:11, color:'var(--text-faint)', marginTop:2, fontFamily:'monospace' }}>{r.sgk_sicil}</div>
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+                        {r.mevcut_calisan !== null && r.mevcut_calisan !== r.yeni_calisan && (
+                          <span style={{ fontSize:12, color:'var(--text-faint)', textDecoration:'line-through' }}>{r.mevcut_calisan}</span>
+                        )}
+                        <span style={{ fontSize:15, fontWeight:700, color:'var(--accent)' }}>{r.yeni_calisan}</span>
+                        <span style={{ fontSize:11, color:'var(--text-faint)' }}>kişi</span>
+                        {r.kisi_basi_ucret > 0 && (
+                          <span style={{ fontSize:12, color:'var(--green)' }}>{tl(r.yeni_calisan * r.kisi_basi_ucret)}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {importHata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:12 }}>{importHata}</div>}
+                <div style={{ display:'flex', gap:10 }}>
+                  <button className="btn btn-ghost" style={{ flex:1, justifyContent:'center' }}
+                    onClick={()=>{ setImportOnizleme([]); setImportHata('') }}>
+                    ← Geri
+                  </button>
+                  <button className="btn" style={{ flex:1, justifyContent:'center' }}
+                    onClick={importKaydet} disabled={importYukleniyor}>
+                    {importYukleniyor ? 'Kaydediliyor...' : `${importOnizleme.length} Firmayı Kaydet`}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
