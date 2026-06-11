@@ -202,12 +202,12 @@ export default function Fatura() {
         return
       }
 
-      // Tekil SGK → max çalışan sayısı (birden fazla sözleşme olabilir)
+      // Tekil SGK → çalışan sayısı (aynı firma farklı sözleşme türleriyle tekrar edebilir, değer aynıdır)
       const sgkMap: Record<string, number> = {}
       rows.forEach((r: any) => {
         const sgk = String(r[SGK_COL]||'').trim()
         const c = Number(r[CALISAN_COL])
-        if (sgk && c > 0) sgkMap[sgk] = Math.max(sgkMap[sgk]||0, c)
+        if (sgk && c > 0 && !(sgk in sgkMap)) sgkMap[sgk] = c
       })
 
       // Firmalarla eşleştir
