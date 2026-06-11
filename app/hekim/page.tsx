@@ -70,18 +70,32 @@ export default function HekimEkrani() {
   async function ziyaretIsaretle(firma_id: string, gidildi: boolean) {
     if (!mevcutHekim) return
     setHata('')
+    const bugun = new Date().toISOString().slice(0,10)
     const { error } = await sb.from('hekim_ziyaret_durumu').upsert({
       firma_id,
       hekim_id: mevcutHekim.id,
       ay: buAy,
       gidildi,
-      gidilen_tarih: gidildi ? new Date().toISOString().slice(0,10) : null,
+      gidilen_tarih: gidildi ? bugun : null,
     }, { onConflict: 'firma_id,hekim_id,ay' })
     if (error) { setHata(error.message); return }
+
+    // Gidildi işaretlenince ziyaretler tablosuna da İH kaydı oluştur
+    if (gidildi) {
+      await sb.from('ziyaretler').insert({
+        firma_id,
+        tarih: bugun,
+        ziyaret_eden: mevcutHekim.ad_soyad,
+        ziyaret_eden_id: mevcutHekim.id,
+        tur: 'İH',
+        notlar: 'Hekim ziyareti — otomatik oluşturuldu',
+      })
+    }
+
     // Lokal güncelle
     setZiyaretDurumlari(prev => {
       const filtered = prev.filter(d => d.firma_id !== firma_id)
-      return [...filtered, { firma_id, hekim_id: mevcutHekim.id, ay: buAy, gidildi, gidilen_tarih: gidildi ? new Date().toISOString().slice(0,10) : null }]
+      return [...filtered, { firma_id, hekim_id: mevcutHekim.id, ay: buAy, gidildi, gidilen_tarih: gidildi ? bugun : null }]
     })
   }
 

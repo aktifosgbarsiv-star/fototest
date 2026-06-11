@@ -31,6 +31,7 @@ export default function Fatura() {
   const [hata, setHata] = useState('')
   const [basari, setBasari] = useState('')
   const [katipModal, setKatipModal] = useState<any>(null)
+  const [oncekiAyMap, setOncekiAyMap] = useState<Record<string,number>>({})
   const [katipForm, setKatipForm] = useState<any>(bosKatipForm())
 
   // Aktif ay — varsayılan bu ay
@@ -46,21 +47,37 @@ export default function Fatura() {
   const sb = createClient()
   useEffect(() => { yukle() }, [ay])
 
+  // Bir önceki ayı hesapla
+  function oncekiAy(ayStr: string) {
+    const [y, m] = ayStr.split('-').map(Number)
+    const d = new Date(y, m - 2, 1)
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+  }
+
   async function yukle() {
     setYukleniyor(true)
     setHata('')
-    const [fRes, dRes, kRes] = await Promise.all([
+    const onceki = oncekiAy(ay)
+    const [fRes, dRes, kRes, oncekiRes] = await Promise.all([
       // Tüm aktif firmalar — kişi başı ücret ve tehlike bilgisiyle
       sb.from('firmalar').select('id, unvan, isg_katip_unvan, sgk_sicil, tehlike_sinifi, calisan_sayisi, kisi_basi_ucret, kisi_basi_ucret_yeni, fatura, fatura_aciklama, bolge, gorevli_igu, gorevli_ih').order('unvan'),
       // Bu ay için mevcut dönem kayıtları (varsa)
       sb.from('donem_takip').select('*').eq('ay', ay),
       // Tüm Katip sözleşmeleri
       sb.from('katip_sozlesmeleri').select('*').order('sozlesme_turu'),
+      // Bir önceki ayın dönem kayıtları — onceki_ay_calisan için
+      sb.from('donem_takip').select('firma_id, calisan_sayisi').eq('ay', onceki),
     ])
     if (fRes.error) { setHata('Veriler yüklenemedi'); setYukleniyor(false); return }
     setFirmalar(fRes.data || [])
-    setDonemler(dRes.data || [])
     setKatipSozlesmeler(kRes.data || [])
+    // Bu ay kaydı yoksa onceki aydan otomatik doldur
+    const oncekiMap: Record<string, number> = {}
+    ;(oncekiRes.data || []).forEach((d: any) => { oncekiMap[d.firma_id] = d.calisan_sayisi })
+    const buAyDonemler = dRes.data || []
+    // Bu ay kaydı olmayan firmalar için onceki ay verisini pre-fill et (sadece state'de, DB'ye yazmıyoruz)
+    setOncekiAyMap(oncekiMap)
+    setDonemler(buAyDonemler)
     setYukleniyor(false)
   }
 
@@ -86,20 +103,21 @@ export default function Fatura() {
   async function calisanGuncelle(firma: any, calisan: number) {
     const mevcut = donemBul(firma.id)
     const kisi_basi = Number(firma.kisi_basi_ucret) || 0
-    const onceki = mevcut?.calisan_sayisi || firma.calisan_sayisi || 0
+    // Önceki ay calisan_sayisi: önce DB'deki oncekiAyMap, yoksa firmadan al
+    const oncekiCalisan = oncekiAyMap[firma.id] ?? firma.calisan_sayisi ?? 0
 
     if (mevcut) {
       await sb.from('donem_takip').update({
         calisan_sayisi: calisan,
         kisi_basi_ucret: kisi_basi,
-        onceki_ay_calisan: onceki
+        onceki_ay_calisan: oncekiCalisan
       }).eq('id', mevcut.id)
     } else {
       await sb.from('donem_takip').insert({
         firma_id: firma.id,
         ay,
         calisan_sayisi: calisan,
-        onceki_ay_calisan: firma.calisan_sayisi || 0,
+        onceki_ay_calisan: oncekiCalisan,
         kisi_basi_ucret: kisi_basi,
       })
     }

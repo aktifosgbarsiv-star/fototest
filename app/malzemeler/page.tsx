@@ -18,7 +18,7 @@ export default function Malzemeler() {
   const [hForm, setHForm] = useState<any>({ hareket_turu:'Giriş', miktar:'', birim_fiyat:'', aciklama:'' })
 
   function bosForm() {
-    return { ad:'', kategori:'Yangın Güvenliği', birim:'Adet', stok:'', kritik_stok:'', alis_fiyat:'', satis_fiyat:'', tedarikci:'', aciklama:'' }
+    return { ad:'', kategori:'Yangın Güvenliği', birim:'Adet', stok:'', kritik_stok:'', alis_fiyat:'', satis_fiyat:'', tedarikci:'', tedarikci_id:'', aciklama:'' }
   }
 
   const sb = createClient()
@@ -139,7 +139,7 @@ export default function Malzemeler() {
                     <td style={{ color:'var(--text-dim)', fontSize:13 }}>{m.kritik_stok||'—'}</td>
                     <td style={{ whiteSpace:'nowrap', color:'var(--text-dim)' }}>{m.alis_fiyat>0?tl(m.alis_fiyat):'—'}</td>
                     <td style={{ whiteSpace:'nowrap', fontWeight:500 }}>{m.satis_fiyat>0?tl(m.satis_fiyat):'—'}</td>
-                    <td style={{ fontSize:12, color:'var(--text-dim)' }}>{m.tedarikci||'—'}</td>
+                    <td style={{ fontSize:12, color:'var(--text-dim)' }}>{m.tedarikci_id ? (tedarikciler.find((t:any)=>t.id===m.tedarikci_id)?.unvan||m.tedarikci||'—') : (m.tedarikci||'—')}</td>
                     <td>
                       <div style={{ display:'flex', gap:4 }}>
                         <button onClick={()=>{ setHareketModal(m); setHForm({...hForm, hareket_turu:'Giriş'}) }} title="Stok Giriş" style={{ background:'var(--green-soft)', border:'none', color:'var(--green)', borderRadius:7, padding:'5px 8px', cursor:'pointer', display:'flex', alignItems:'center' }}><ArrowUpCircle size={15}/></button>
@@ -202,9 +202,12 @@ export default function Malzemeler() {
               <div><label style={lbl}>Alış Fiyatı (₺)</label><input type="number" value={form.alis_fiyat} onChange={e=>setForm({...form, alis_fiyat:e.target.value})} /></div>
               <div><label style={lbl}>Satış Fiyatı (₺)</label><input type="number" value={form.satis_fiyat} onChange={e=>setForm({...form, satis_fiyat:e.target.value})} /></div>
               <div style={{ gridColumn:'1/3' }}><label style={lbl}>Tedarikçi</label>
-                <select value={form.tedarikci} onChange={e=>setForm({...form, tedarikci:e.target.value})}>
+                <select value={form.tedarikci_id} onChange={e=>{
+                  const t = tedarikciler.find((x:any)=>x.id===e.target.value)
+                  setForm({...form, tedarikci_id:e.target.value, tedarikci:t?.unvan||''})
+                }}>
                   <option value="">Seçiniz...</option>
-                  {tedarikciler.map(t=><option key={t.id} value={t.unvan}>{t.unvan}</option>)}
+                  {tedarikciler.map(t=><option key={t.id} value={t.id}>{t.unvan}</option>)}
                 </select>
               </div>
               <div style={{ gridColumn:'1/3' }}><label style={lbl}>Açıklama</label><input value={form.aciklama} onChange={e=>setForm({...form, aciklama:e.target.value})} /></div>

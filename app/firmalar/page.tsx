@@ -70,6 +70,10 @@ export default function Firmalar() {
       paket_3434: Number(form.paket_3434)||0,
       igu_atama_tarihi: form.igu_atama_tarihi||null,
       ih_atama_tarihi: form.ih_atama_tarihi||null,
+      // UUID alanları boş string olamaz — null olmalı
+      igu_id: form.igu_id||null,
+      ih_id: form.ih_id||null,
+      dsp_id: form.dsp_id||null,
     }
     if (duzenle) {
       const { error } = await sb.from('firmalar').update(payload).eq('id', duzenle.id)
