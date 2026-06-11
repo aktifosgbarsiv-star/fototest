@@ -97,6 +97,11 @@ export default function Malzemeler() {
         </div>
       )}
 
+      <div style={{ display:'flex', gap:12, alignItems:'flex-start', background:'var(--amber-soft)', border:'1px solid rgba(99,102,241,0.1)', borderRadius:12, padding:'14px 16px', marginBottom:20 }}>
+        <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
+        <p style={{ fontSize:13, color:'var(--text-dim)', lineHeight:1.7, margin:0 }}>Malzeme Stok — Yangın tüpü, göz duşu gibi malzemelerin takibi. Yeşil ↑ stok girişi, sarı ↓ çıkış; her hareket kayıt altına alınır. Kırmızı görünen stoklar kritik seviyenin altındadır.</p>
+      </div>
+
       {hata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:16 }}>{hata}</div>}
 
       <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:20 }}>

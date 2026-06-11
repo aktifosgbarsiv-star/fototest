@@ -78,6 +78,11 @@ export default function Saglik() {
         <button className="btn" onClick={()=>setModal(true)}><Plus size={18}/> Yeni Kayıt</button>
       </div>
 
+      <div style={{ display:'flex', gap:12, alignItems:'flex-start', background:'var(--green-soft)', border:'1px solid rgba(99,102,241,0.1)', borderRadius:12, padding:'14px 16px', marginBottom:20 }}>
+        <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
+        <p style={{ fontSize:13, color:'var(--text-dim)', lineHeight:1.7, margin:0 }}>Sağlık Tarama — İşe giriş ve periyodik muayene kayıtları. Her hasta için tetkikleri (EK2, AKC, EKG...) işaretleyin. Firmayı listeden veya yazarak seçin. Satıra tıklayarak detayı görüntüleyin.</p>
+      </div>
+
       {hata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:16 }}>{hata}</div>}
 
       <div style={{ position:'relative', marginBottom:20, maxWidth:360 }}>

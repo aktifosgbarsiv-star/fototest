@@ -98,6 +98,11 @@ export default function Teklifler() {
         ))}
       </div>
 
+      <div style={{ display:'flex', gap:12, alignItems:'flex-start', background:'var(--amber-soft)', border:'1px solid rgba(99,102,241,0.1)', borderRadius:12, padding:'14px 16px', marginBottom:20 }}>
+        <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
+        <p style={{ fontSize:13, color:'var(--text-dim)', lineHeight:1.7, margin:0 }}>Satış Teklifleri — ISG, Malzeme, Ölçüm ve Tarama tekliflerini takip edin. Durum kartlarına tıklayarak filtreleyin. Kart üzerindeki açılır menüden durumu güncelleyin. Olumlu teklifler Tarama Operasyonlarına aktarılabilir.</p>
+      </div>
+
       {hata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:16 }}>{hata}</div>}
 
       <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:20, alignItems:'center' }}>

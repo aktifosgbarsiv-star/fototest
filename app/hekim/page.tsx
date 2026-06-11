@@ -93,6 +93,12 @@ export default function HekimEkrani() {
         </div>
       </div>
 
+      
+      <div style={{ display:'flex', gap:12, alignItems:'flex-start', background:'var(--green-soft)', border:'1px solid rgba(99,102,241,0.1)', borderRadius:12, padding:'14px 16px', marginBottom:20 }}>
+        <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
+        <p style={{ fontSize:13, color:'var(--text-dim)', lineHeight:1.7, margin:0 }}>Hekim Ekranı — Hekime özel görünüm. Günlük, haftalık veya tüm kayıtlar arasında geçiş yapın. Üstteki kartlar dönemde hangi tetkikin kaç kez yapıldığını gösterir. Hasta kartına tıklayınca tüm tetkik detayları açılır.</p>
+      </div>
+
       {/* TARİH NAV */}
       {mod !== 'tum' && (
         <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:24 }}>

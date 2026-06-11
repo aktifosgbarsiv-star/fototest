@@ -107,11 +107,16 @@ export default function Personeller() {
         </button>
       </div>
 
+      <div style={{ display:'flex', gap:12, alignItems:'flex-start', background:'var(--accent-soft)', border:'1px solid rgba(99,102,241,0.1)', borderRadius:12, padding:'14px 16px', marginBottom:20 }}>
+        <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
+        <p style={{ fontSize:13, color:'var(--text-dim)', lineHeight:1.7, margin:0 }}>Personel Yönetimi — Sadece yöneticiler erişebilir. Rol değişikliği anında kaydedilir. Aktif/Pasif ile sisteme girişi açıp kapatın. Yeni personel eklerken e-posta ve şifre belirlenir, kullanıcı otomatik oluşturulur.</p>
+      </div>
+
       {hata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 16px', borderRadius:10, fontSize:13, marginBottom:16 }}>{hata}</div>}
       {basari && <div style={{ background:'var(--green-soft)', color:'var(--green)', padding:'10px 16px', borderRadius:10, fontSize:13, marginBottom:16 }}>{basari}</div>}
 
       {/* ROL ÖZET */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10, marginBottom:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(100px,1fr))', gap:10, marginBottom:24 }}>
         {ROLLER.map(r => (
           <div key={r} className="card" style={{ padding:'12px 14px', textAlign:'center' }}>
             <div style={{ fontSize:20, fontWeight:700, color:ROL_RENK[r], fontFamily:'Sora,sans-serif' }}>

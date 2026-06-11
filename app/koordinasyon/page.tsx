@@ -105,6 +105,11 @@ export default function Koordinasyon() {
         </div>
       </div>
 
+      <div style={{ display:'flex', gap:12, alignItems:'flex-start', background:'var(--blue-soft)', border:'1px solid rgba(99,102,241,0.1)', borderRadius:12, padding:'14px 16px', marginBottom:20 }}>
+        <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
+        <p style={{ fontSize:13, color:'var(--text-dim)', lineHeight:1.7, margin:0 }}>ISG Koordinasyon — Uzman görev takvimi. Tarih seçip görev ekleyin. Haftalık butonu ile 7 günlük görünüme geçin. Uzman seçimi sistemdeki kayıtlı personelden yapılır, tamamlanan görevleri yeşil butonla işaretleyin.</p>
+      </div>
+
       {hata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:16 }}>{hata}</div>}
 
       <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:20, flexWrap:'wrap' }}>
@@ -121,7 +126,7 @@ export default function Koordinasyon() {
       </div>
 
       {haftalikMi && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:8, marginBottom:20 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,minmax(44px,1fr))', gap:6, marginBottom:20, overflowX:'auto' }}>
           {hafta.map((gun,i) => {
             const gunGorevleri = gorevler.filter(g=>g.tarih===gun)
             const bugun = gun === new Date().toISOString().slice(0,10)

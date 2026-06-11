@@ -194,7 +194,7 @@ export default function Fatura() {
       {hata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:16 }}>{hata}</div>}
 
       {/* ÖZET KARTLAR */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))', gap:12, marginBottom:24 }}>
         <div className="card" style={{ padding:'16px 18px' }}>
           <div style={{ fontSize:11, color:'var(--text-faint)', marginBottom:8 }}>Toplam Fatura Tutarı</div>
           <div style={{ fontFamily:'Sora,sans-serif', fontSize:22, fontWeight:700, color:'var(--green)' }}>{tl(toplamFatura)}</div>

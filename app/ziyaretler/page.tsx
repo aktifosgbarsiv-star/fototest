@@ -109,6 +109,11 @@ export default function Ziyaretler() {
         <button className="btn" onClick={()=>setModal(true)}><Plus size={18}/> Ziyaret Ekle</button>
       </div>
 
+      <div style={{ display:'flex', gap:12, alignItems:'flex-start', background:'var(--blue-soft)', border:'1px solid rgba(99,102,241,0.1)', borderRadius:12, padding:'14px 16px', marginBottom:20 }}>
+        <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
+        <p style={{ fontSize:13, color:'var(--text-dim)', lineHeight:1.7, margin:0 }}>ISG Ziyaretleri — Aylık firma ziyaret takibi. Üst tabloda firma bazında İGU, İH, DSP sayıları görünür. Ziyaret eklerken personeli listeden seçin. Her kayıt firmanın aylık sayacına otomatik eklenir.</p>
+      </div>
+
       {hata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:16 }}>{hata}</div>}
 
       <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:20 }}>
