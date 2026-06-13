@@ -14,9 +14,10 @@ export default function Ziyaretler() {
   const [aramaDebounced, setAramaDebounced] = useState('')
   const [yil, setYil] = useState(new Date().getFullYear())
   const [yukleniyor, setYukleniyor] = useState(true)
+  const [personeller, setPersoneller] = useState<any[]>([])
   const [detayFirma, setDetayFirma] = useState<any>(null)
   const [detayAy, setDetayAy] = useState<number|null>(null)
-  const [form, setForm] = useState({ tarih: new Date().toISOString().slice(0,10), tur: 'İGU', notlar: '', fatura: false })
+  const [form, setForm] = useState({ tarih: new Date().toISOString().slice(0,10), tur: 'İGU', notlar: '', fatura: false, operasyon_yapan: '', operasyon_yapan_id: '' })
   const [kayitYukleniyor, setKayitYukleniyor] = useState(false)
   const debounceRef = useRef<any>(null)
   const sb = createClient()
@@ -58,8 +59,12 @@ export default function Ziyaretler() {
       q = q.or(`gorevli_igu.ilike.%${ad}%,gorevli_ih.ilike.%${ad}%`)
     }
 
-    const { data } = await q
-    setFirmalar((data || []).filter((f: any) => f.ih_periyot !== 'GİDİLMİYOR'))
+    const [fData, pData] = await Promise.all([
+      q,
+      sb.from('personeller').select('id, ad_soyad, rol').eq('aktif', true).order('ad_soyad')
+    ])
+    setFirmalar((fData.data || []).filter((f: any) => f.ih_periyot !== 'GİDİLMİYOR'))
+    setPersoneller(pData.data || [])
     setYukleniyor(false)
   }
 
@@ -113,12 +118,15 @@ export default function Ziyaretler() {
     setKayitYukleniyor(true)
     const ayKey = `${yil}-${String(detayAy + 1).padStart(2, '0')}`
     const mevcut = detayFirma.aylik_ziyaretler || {}
-    const guncel = { ...mevcut, [ayKey]: { ...mevcut[ayKey], gidildi: true, tarih: form.tarih, tur: form.tur, notlar: form.notlar, fatura: form.fatura || false } }
+    const guncel = { ...mevcut, [ayKey]: { ...mevcut[ayKey], gidildi: true, tarih: form.tarih, tur: form.tur, notlar: form.notlar, fatura: form.fatura || false, operasyon_yapan: form.operasyon_yapan || mevcutPersonel?.ad_soyad || '' } }
 
     await sb.from('firmalar').update({ aylik_ziyaretler: guncel }).eq('id', detayFirma.id)
     await sb.from('ziyaretler').insert({
       firma_id: detayFirma.id, tarih: form.tarih, tur: form.tur, notlar: form.notlar,
-      ziyaret_eden: mevcutPersonel?.ad_soyad || '', ziyaret_eden_id: mevcutPersonel?.id || null
+      ziyaret_eden: mevcutPersonel?.ad_soyad || '', ziyaret_eden_id: mevcutPersonel?.id || null,
+      operasyon_yapan: form.operasyon_yapan || mevcutPersonel?.ad_soyad || '',
+      operasyon_yapan_id: form.operasyon_yapan_id || mevcutPersonel?.id || null,
+      fatura_kesildi: form.fatura || false
     })
     setDetayFirma(null); setDetayAy(null)
     yukle()
@@ -256,7 +264,7 @@ export default function Ziyaretler() {
                           {durum==='gelecek' ? (
                             <div style={{ width:16, height:16, border:'1px dashed var(--border)', borderRadius:3, margin:'0 auto', opacity:0.3 }}/>
                           ) : durum==='gidildi' ? (
-                            <div title={bilgi?.tarih?`${bilgi.tarih} · ${bilgi.tur}`:''} style={{ width:18, height:18, background:'#22c55e', borderRadius:3, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            <div title={bilgi?.tarih?`${bilgi.tarih} · ${bilgi.tur}${bilgi.operasyon_yapan?' · '+bilgi.operasyon_yapan:''}`:''} style={{ width:18, height:18, background:'#22c55e', borderRadius:3, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center' }}>
                               <span style={{ color:'white', fontSize:9, fontWeight:700 }}>✓</span>
                             </div>
                           ) : (
@@ -326,6 +334,21 @@ export default function Ziyaretler() {
                         color:form.tur===t?'var(--accent)':'var(--text-dim)' }}>{t}</button>
                   ))}
                 </div>
+              </div>
+              <div>
+                <label style={{ fontSize:12, color:'var(--text-dim)', display:'block', marginBottom:6, fontWeight:500 }}>
+                  Operasyon Yapan
+                  <span style={{ fontSize:10, color:'var(--text-faint)', marginLeft:6 }}>— fiilen giden uzman</span>
+                </label>
+                <select value={form.operasyon_yapan_id} onChange={e=>{
+                  const p = personeller.find((x:any)=>x.id===e.target.value)
+                  setForm(f=>({...f, operasyon_yapan_id:e.target.value, operasyon_yapan:p?.ad_soyad||''}))
+                }} style={{ width:'100%', padding:'10px 12px', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:10, color:'var(--text)', fontSize:13, fontFamily:'inherit' }}>
+                  <option value="">Seçiniz (boş = giriş yapan)...</option>
+                  {personeller.filter((p:any)=>['saha','operasyon','yonetici'].includes(p.rol)).map((p:any)=>(
+                    <option key={p.id} value={p.id}>{p.ad_soyad} ({p.rol})</option>
+                  ))}
+                </select>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', background:'var(--surface-2)', borderRadius:10, border:'1px solid var(--border)' }}>
                 <input type="checkbox" id="fatura_cb" checked={form.fatura} onChange={e=>setForm(f=>({...f,fatura:e.target.checked}))} style={{ width:16, height:16, cursor:'pointer' }}/>
