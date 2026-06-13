@@ -52,8 +52,7 @@ export default function Ziyaretler() {
 
     if (aramaDebounced) q = q.ilike('unvan', `%${aramaDebounced}%`)
 
-    const rol = mevcutPersonel?.rol || 'operasyon'
-  const yazabilir = !['saha'].includes(rol)
+    const rol2 = mevcutPersonel?.rol || 'operasyon'
     if (rol === 'saha' && mevcutPersonel?.ad_soyad) {
       const ad = mevcutPersonel.ad_soyad
       q = q.or(`gorevli_igu.ilike.%${ad}%,gorevli_ih.ilike.%${ad}%`)
@@ -137,6 +136,7 @@ export default function Ziyaretler() {
   const buAy = simdi.getMonth()
   const buYil = simdi.getFullYear()
   const rol = mevcutPersonel?.rol || 'operasyon'
+  const yazabilir = !['saha'].includes(rol)
 
   const istatistik = {
     toplam: firmalar.length,
