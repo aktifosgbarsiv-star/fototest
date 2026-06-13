@@ -89,7 +89,9 @@ export default function Malzemeler() {
     yukle()
   }
 
-  const filtreli = malzemeler // server-side  function exportCSV() {
+  const filtreli = malzemeler // server-side
+
+  function exportCSV() {
     csvIndir(filtreli.map(m => ({
       'Ad': m.ad||'', 'Kategori': m.kategori||'', 'Birim': m.birim||'',
       'Stok': m.stok||0, 'Kritik Stok': m.kritik_stok||0,

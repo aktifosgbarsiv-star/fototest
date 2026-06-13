@@ -101,7 +101,9 @@ export default function Ziyaretler() {
 
   // Personelleri role göre grupla
   const uzmanlar = personeller.filter(p => ['operasyon','saha','yonetici'].includes(p.rol))
-  const filtreli = ziyaretler // server-side  function exportCSV() {
+  const filtreli = ziyaretler // server-side
+
+  function exportCSV() {
     csvIndir(filtreli.map(z => ({
       'Tarih': z.tarih||'', 'Firma': z.firmalar?.unvan||'', 'Tür': z.tur||'',
       'Ziyaret Eden': z.ziyaret_eden||'', 'Not': z.notlar||'',

@@ -43,7 +43,7 @@ export default function Idari() {
   async function yukle() {
     setYukleniyor(true)
     let q = sb.from('idari_isler').select('*').order('created_at', { ascending:false })
-    if (arama) q = q.ilike('konu', \`%${arama}%\`)
+    if (arama) q = q.ilike('konu', `%${arama}%`)
     const { data, error } = await q
     if (error) { setHata('Veriler yüklenemedi.'); return }
     setIsler(data || [])

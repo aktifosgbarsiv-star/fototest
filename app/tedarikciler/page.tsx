@@ -41,7 +41,7 @@ export default function Tedarikciler() {
   async function yukle() {
     setYukleniyor(true)
     let q = sb.from('tedarikciler').select('*').order('unvan', { ascending:false })
-    if (arama) q = q.ilike('unvan', \`%${arama}%\`)
+    if (arama) q = q.ilike('unvan', `%${arama}%`)
     const { data, error } = await q
     if (error) { setHata('Yüklenemedi'); return }
     setTedarikciler(data || [])

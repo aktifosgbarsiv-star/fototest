@@ -85,7 +85,9 @@ export default function Taramalar() {
     yukle()
   }
 
-  const filtreli = taramalar // server-side  function exportCSV() {
+  const filtreli = taramalar // server-side
+
+  function exportCSV() {
     csvIndir(filtreli.map(t => ({
       'Firma': t.firma_adi||'', 'Planlanan': t.planlanan_tarih||'', 'Gerçekleşen': t.gerceklesen_tarih||'',
       'Kişi Sayısı': t.kisi_sayisi||'', 'Aşama': t.asama||'', 'Tutar': t.tutar||0, 'Fatura No': t.fatura_no||'',

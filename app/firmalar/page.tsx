@@ -62,7 +62,7 @@ export default function Firmalar() {
   async function yukle() {
     setYukleniyor(true)
     let q = sb.from('firmalar').select('*').order('unvan')
-    if (arama) q = q.ilike('unvan', \`%\${arama}%\`)
+    if (arama) q = q.ilike('unvan', `%${arama}%`)
     if (tehlikeFiltre !== 'Hepsi') q = q.eq('tehlike_sinifi', tehlikeFiltre)
     if (bolgeFiltre !== 'Hepsi') q = q.eq('bolge', bolgeFiltre)
     const { data, error } = await q

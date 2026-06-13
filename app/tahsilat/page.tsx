@@ -115,7 +115,9 @@ export default function Tahsilat() {
     yukle()
   }
 
-  const filtreli = cariler // server-side  function exportCSV() {
+  const filtreli = cariler // server-side
+
+  function exportCSV() {
     csvIndir(filtreli.map(c => ({
       'Ünvan': c.unvan||'', 'Müşteri No': c.musteri_no||'', 'Telefon': c.telefon||'',
       'Açık Bakiye': c.acik_bakiye||0, 'Vadesi Geçen': c.vadesi_gecen_tutar||0,
