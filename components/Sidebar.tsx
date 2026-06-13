@@ -3,12 +3,12 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useState, useEffect } from 'react'
-import { UserCog, LogOut, LayoutDashboard, Building2, HeartPulse, FileText, Wallet, ClipboardList, CalendarDays, MapPin, Stethoscope, Package, Truck, Activity, BarChart2, AlertTriangle } from 'lucide-react'
+import { UserCog, LogOut, LayoutDashboard, Building2, HeartPulse, FileText, Wallet, ClipboardList, CalendarDays, MapPin, Stethoscope, Package, Truck, Activity, BarChart2, AlertTriangle, SearchIcon } from 'lucide-react'
 
 const ROL_AD: any = { yonetici:'Yönetici', operasyon:'Operasyon', hekim:'Hekim', satis:'Satış', muhasebe:'Muhasebe', saha:'Saha Uzmanı' }
 
 const ERISIM: any = {
-  yonetici:  ['/','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler'],
+  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler'],
   operasyon: ['/','/firmalar','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler'],
   hekim:     ['/','/saglik','/hekim','/koordinasyon'],
   satis:     ['/','/firmalar','/teklifler','/malzemeler','/tedarikciler'],
@@ -17,7 +17,10 @@ const ERISIM: any = {
 }
 
 const GRUPLAR = [
-  { baslik:'Genel', linkler:[{ href:'/', label:'Dashboard', icon:LayoutDashboard }] },
+  { baslik:'Genel', linkler:[
+    { href:'/', label:'Dashboard', icon:LayoutDashboard },
+    { href:'/ara', label:'Global Arama', icon:SearchIcon },
+  ]},
   { baslik:'ISG & Firmalar', linkler:[
     { href:'/firmalar', label:'Firmalar', icon:Building2 },
     { href:'/ziyaretler', label:'ISG Ziyaretleri', icon:MapPin },
