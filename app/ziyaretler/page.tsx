@@ -2,265 +2,296 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { csvIndir } from '@/lib/csvExport'
-import { Plus, X, MapPin, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, X, ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
 
-const TUR_RENK: any = { 'İGU':'var(--blue)', 'İH':'var(--green)', 'DSP':'var(--amber)' }
+const AYLAR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
+const AYLAR_FULL = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']
 
 export default function Ziyaretler() {
-  const [ziyaretler, setZiyaretler] = useState<any[]>([])
-  const [arama, setArama] = useState('')
-  const [turFiltre, setTurFiltre] = useState('Hepsi')
-  const [uzmanFiltre, setUzmanFiltre] = useState('Hepsi')
   const [firmalar, setFirmalar] = useState<any[]>([])
-  const [personeller, setPersoneller] = useState<any[]>([])
-  const [modal, setModal] = useState(false)
+  const [mevcutPersonel, setMevcutPersonel] = useState<any>(null)
+  const [arama, setArama] = useState('')
+  const [aramaDebounced, setAramaDebounced] = useState('')
+  const [yil, setYil] = useState(new Date().getFullYear())
   const [yukleniyor, setYukleniyor] = useState(true)
-  const [hata, setHata] = useState('')
-  const [ay, setAy] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}` })
-  const [form, setForm] = useState<any>(bosForm())
-
-  function bosForm() {
-    return { firma_id:'', ziyaret_eden_id:'', tarih:new Date().toISOString().slice(0,10), tur:'İGU', notlar:'' }
-  }
-
+  const [detayFirma, setDetayFirma] = useState<any>(null)
+  const [detayAy, setDetayAy] = useState<number|null>(null)
+  const [form, setForm] = useState({ tarih: new Date().toISOString().slice(0,10), tur: 'İGU', notlar: '' })
+  const [kayitYukleniyor, setKayitYukleniyor] = useState(false)
+  const debounceRef = useRef<any>(null)
   const sb = createClient()
-  useEffect(() => { yukle() }, [ay])
+
+  useEffect(() => {
+    sb.auth.getUser().then(async ({ data }) => {
+      if (data.user) {
+        const { data: p } = await sb.from('personeller').select('*').eq('id', data.user.id).single()
+        setMevcutPersonel(p || { rol: 'operasyon' })
+      } else {
+        setMevcutPersonel({ rol: 'operasyon' })
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => setAramaDebounced(arama), 400)
+    return () => clearTimeout(debounceRef.current)
+  }, [arama])
+
+  useEffect(() => { if (mevcutPersonel !== null) yukle() }, [yil, aramaDebounced, mevcutPersonel])
 
   async function yukle() {
-    const [ayBas, ayBit] = ayAraligi(ay)
-    const [zRes, fRes, pRes] = await Promise.all([
-      sb.from('ziyaretler').select('*, firmalar(unvan, tehlike_sinifi), personeller(ad_soyad, rol)').gte('tarih', ayBas).lte('tarih', ayBit).order('tarih', { ascending:false }),
-      (() => { let q = sb.from('firmalar').select('id, unvan, ziyaret_periyodu, tehlike_sinifi, aylik_ziyaretler, gorevli_ih').order('unvan'); if (arama) q = q.ilike('unvan', `%${arama}%`); return q })(),
-      sb.from('personeller').select('id, ad_soyad, rol').eq('aktif', true).order('ad_soyad')
-    ])
-    if (zRes.error) { setHata('Yüklenemedi'); return }
-    setZiyaretler(zRes.data || [])
-    setFirmalar(fRes.data || [])
-    setPersoneller(pRes.data || [])
+    setYukleniyor(true)
+    let q = sb.from('firmalar')
+      .select('id, unvan, tehlike_sinifi, ih_periyot, gorevli_igu, gorevli_ih, aylik_ziyaretler')
+      .eq('aktif', true)
+      .not('ih_periyot', 'is', null)
+      .order('unvan')
+      .limit(300)
+
+    if (aramaDebounced) q = q.ilike('unvan', `%${aramaDebounced}%`)
+
+    const rol = mevcutPersonel?.rol || 'operasyon'
+    if (rol === 'saha' && mevcutPersonel?.ad_soyad) {
+      const ad = mevcutPersonel.ad_soyad
+      q = q.or(`gorevli_igu.ilike.%${ad}%,gorevli_ih.ilike.%${ad}%`)
+    }
+
+    const { data } = await q
+    setFirmalar((data || []).filter((f: any) => f.ih_periyot !== 'GİDİLMİYOR'))
     setYukleniyor(false)
   }
 
-  function ayAraligi(ayStr: string) {
-    const [y, m] = ayStr.split('-').map(Number)
-    return [`${ayStr}-01`, new Date(y, m, 0).toISOString().slice(0,10)]
+  function ziyaretDurumu(firma: any, ayIdx: number) {
+    const ayKey = `${yil}-${String(ayIdx + 1).padStart(2, '0')}`
+    const periyot = parseFloat(firma.ih_periyot)
+    const gidildi = !!(firma.aylik_ziyaretler || {})[ayKey]
+    const simdi = new Date()
+    const gelecek = yil > simdi.getFullYear() || (yil === simdi.getFullYear() && ayIdx > simdi.getMonth())
+
+    if (gelecek) return 'gelecek'
+    if (gidildi) return 'gidildi'
+
+    let gerekirMi = false
+    if (periyot <= 0.5) gerekirMi = true
+    else if (periyot <= 1.0) gerekirMi = ayIdx % 2 === 0
+    else if (periyot <= 2.0) gerekirMi = ayIdx % 4 === 0
+
+    return gerekirMi ? 'gidilmedi' : 'gerekmiyor'
   }
 
-  function ayDegistir(fark: number) {
-    const [y, m] = ay.split('-').map(Number)
-    const d = new Date(y, m - 1 + fark, 1)
-    setAy(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)
+  function atamaDurumu(firma: any) {
+    if (!firma.gorevli_igu && !firma.gorevli_ih) return 'kirmizi'
+    if (firma.gorevli_igu && firma.gorevli_ih) return 'yesil'
+    return 'sari'
   }
 
-  async function kaydet() {
-    if (!form.firma_id || !form.ziyaret_eden_id) { setHata('Firma ve ziyaret eden seçiniz'); return }
-    setHata('')
-    const personel = personeller.find(p => p.id === form.ziyaret_eden_id)
-    const { error } = await sb.from('ziyaretler').insert({
-      firma_id: form.firma_id,
-      ziyaret_eden_id: form.ziyaret_eden_id,
-      ziyaret_eden: personel?.ad_soyad || '',
-      tarih: form.tarih,
-      tur: form.tur,
-      notlar: form.notlar
+  async function ziyaretEkle() {
+    if (!detayFirma || detayAy === null) return
+    setKayitYukleniyor(true)
+    const ayKey = `${yil}-${String(detayAy + 1).padStart(2, '0')}`
+    const mevcut = detayFirma.aylik_ziyaretler || {}
+    const guncel = { ...mevcut, [ayKey]: { gidildi: true, tarih: form.tarih, tur: form.tur, notlar: form.notlar } }
+
+    await sb.from('firmalar').update({ aylik_ziyaretler: guncel }).eq('id', detayFirma.id)
+    await sb.from('ziyaretler').insert({
+      firma_id: detayFirma.id, tarih: form.tarih, tur: form.tur, notlar: form.notlar,
+      ziyaret_eden: mevcutPersonel?.ad_soyad || '', ziyaret_eden_id: mevcutPersonel?.id || null
     })
-    if (error) { setHata(error.message); return }
-
-    // aylik_ziyaretler güncelle
-    const firma = firmalar.find(f => f.id === form.firma_id)
-    if (firma) {
-      const mevcut = firma.aylik_ziyaretler || {}
-      const ayKey = form.tarih.slice(0,7)
-      const guncel = { ...mevcut, [ayKey]: { ...mevcut[ayKey], [form.tur]: (mevcut[ayKey]?.[form.tur] || 0) + 1 } }
-      await sb.from('firmalar').update({ aylik_ziyaretler: guncel }).eq('id', form.firma_id)
-    }
-
-    setModal(false); setForm(bosForm()); yukle()
-  }
-
-  async function sil(z: any) {
-    if (!confirm('Silmek istiyor musunuz?')) return
-    await sb.from('ziyaretler').delete().eq('id', z.id)
-    const firma = firmalar.find(f => f.id === z.firma_id)
-    if (firma) {
-      const mevcut = firma.aylik_ziyaretler || {}
-      const ayKey = z.tarih.slice(0,7)
-      const sayac = Math.max(0, (mevcut[ayKey]?.[z.tur] || 1) - 1)
-      const guncel = { ...mevcut, [ayKey]: { ...mevcut[ayKey], [z.tur]: sayac } }
-      await sb.from('firmalar').update({ aylik_ziyaretler: guncel }).eq('id', z.firma_id)
-    }
+    setDetayFirma(null); setDetayAy(null)
     yukle()
+    setKayitYukleniyor(false)
   }
 
-  const firmaOzet = firmalar.map(f => {
-    const fz = ziyaretler.filter(z => z.firma_id === f.id)
-    return { ...f, ziyaretler: fz }
-  })
+  const simdi = new Date()
+  const buAy = simdi.getMonth()
+  const buYil = simdi.getFullYear()
+  const rol = mevcutPersonel?.rol || 'operasyon'
 
-  const ayLabel = new Date(ay + '-15').toLocaleDateString('tr-TR', { month:'long', year:'numeric' })
-
-  // Personelleri role göre grupla
-  const uzmanlar = personeller.filter(p => ['operasyon','saha','yonetici'].includes(p.rol))
-  const filtreli = ziyaretler // server-side
-
-  function exportCSV() {
-    csvIndir(filtreli.map(z => ({
-      'Tarih': z.tarih||'', 'Firma': z.firmalar?.unvan||'', 'Tür': z.tur||'',
-      'Ziyaret Eden': z.ziyaret_eden||'', 'Not': z.notlar||'',
-    })), 'ziyaretler')
+  const istatistik = {
+    toplam: firmalar.length,
+    buAyGidilen: firmalar.filter(f => !!(f.aylik_ziyaretler || {})[`${yil}-${String(buAy+1).padStart(2,'0')}`]).length,
+    gidilmemis: firmalar.filter(f => ziyaretDurumu(f, buAy) === 'gidilmedi').length,
+    atamasiz: firmalar.filter(f => atamaDurumu(f) === 'kirmizi').length,
   }
-  const hekimler = personeller.filter(p => p.rol === 'hekim')
 
   return (
-    <div className="page-wrap">
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16, marginBottom:24 }}>
+    <div className="page-wrap" style={{ maxWidth: '100%', paddingRight: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
         <div>
-          <h1 className="page-title">İSG Ziyaretleri</h1>
-          <p className="page-sub">{ziyaretler.length} ziyaret · {ayLabel}</p>
+          <h1 style={{ fontFamily: 'Sora,sans-serif', fontSize: 26, fontWeight: 700, letterSpacing: -0.5 }}>Ziyaret Takibi</h1>
+          <p style={{ color: 'var(--text-dim)', fontSize: 13, marginTop: 2 }}>
+            {rol === 'saha' ? `${mevcutPersonel?.ad_soyad} — sadece atandığın firmalar görünüyor` : 'Tüm firmalar'}
+          </p>
         </div>
-        <button className="btn" onClick={()=>setModal(true)}><Plus size={18}/> Ziyaret Ekle</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={() => setYil(y => y-1)} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: 'var(--text)' }}><ChevronLeft size={15}/></button>
+          <span style={{ fontWeight: 700, fontSize: 20, minWidth: 55, textAlign: 'center' }}>{yil}</span>
+          <button onClick={() => setYil(y => y+1)} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: 'var(--text)' }}><ChevronRight size={15}/></button>
+        </div>
       </div>
 
-      <div style={{ display:'flex', gap:12, alignItems:'flex-start', background:'var(--blue-soft)', border:'1px solid rgba(99,102,241,0.1)', borderRadius:12, padding:'14px 16px', marginBottom:20 }}>
-        <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
-        <p style={{ fontSize:13, color:'var(--text-dim)', lineHeight:1.7, margin:0 }}>ISG Ziyaretleri — Aylık firma ziyaret takibi. Üst tabloda firma bazında İGU, İH, DSP sayıları görünür. Ziyaret eklerken personeli listeden seçin. Her kayıt firmanın aylık sayacına otomatik eklenir.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
+        {[
+          { label: 'Toplam Firma', val: istatistik.toplam, renk: 'var(--accent)' },
+          { label: 'Bu Ay Gidilen', val: istatistik.buAyGidilen, renk: 'var(--green)' },
+          { label: 'Bu Ay Geciken', val: istatistik.gidilmemis, renk: 'var(--red)' },
+          { label: 'Atamasız', val: istatistik.atamasiz, renk: 'var(--amber)' },
+        ].map((k,i) => (
+          <div key={i} className="card" style={{ padding: '12px 16px' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4 }}>{k.label}</div>
+            <div style={{ fontFamily: 'Sora,sans-serif', fontSize: 26, fontWeight: 700, color: k.renk }}>{k.val}</div>
+          </div>
+        ))}
       </div>
 
-      <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginBottom:16 }}>
-        <input value={arama} onChange={e=>setArama(e.target.value)} placeholder="Firma veya kişi ara..." style={{ padding:'9px 12px', background:'var(--surface)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text)', fontSize:13, fontFamily:'inherit', width:180 }}/>
-        <select value={turFiltre} onChange={e=>setTurFiltre(e.target.value)} style={{ padding:'9px 12px', background:'var(--surface)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text)', fontSize:13, fontFamily:'inherit' }}>
-          {['Hepsi','İGU','İH','DSP'].map(t=><option key={t}>{t}</option>)}
-        </select>
-        <select value={uzmanFiltre} onChange={e=>setUzmanFiltre(e.target.value)} style={{ padding:'9px 12px', background:'var(--surface)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text)', fontSize:13, fontFamily:'inherit' }}>
-          <option value="Hepsi">Tüm Uzmanlar</option>
-          {[...uzmanlar,...hekimler].map((p:any)=><option key={p.id} value={p.ad_soyad}>{p.ad_soyad}</option>)}
-        </select>
-        <button onClick={exportCSV} style={{ padding:'9px 14px', background:'var(--surface)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text-dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>↓ CSV</button>
-      </div>
-      {hata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:16 }}>{hata}</div>}
-
-      <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:20 }}>
-        <button onClick={()=>ayDegistir(-1)} style={navBtn}><ChevronLeft size={18}/></button>
-        <span style={{ fontFamily:'Sora,sans-serif', fontWeight:600, fontSize:16, minWidth:160, textAlign:'center' }}>{ayLabel}</span>
-        <button onClick={()=>ayDegistir(1)} style={navBtn}><ChevronRight size={18}/></button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <div style={{ position: 'relative' }}>
+          <Search size={14} style={{ position: 'absolute', left: 10, top: 11, color: 'var(--text-faint)' }}/>
+          <input value={arama} onChange={e => setArama(e.target.value)} placeholder="Firma ara..." style={{ paddingLeft: 30, width: 180 }}/>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, fontSize: 11 }}>
+          {[['#22c55e','Gidildi'],['#ef4444','Gecikme'],['var(--amber)','Atama Onay Bekliyor'],['#ef4444','Atamasız']].map(([r,l],i) => (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:5 }}>
+              <div style={{ width:10, height:10, borderRadius:'50%', background:r }}/>
+              <span style={{ color:'var(--text-faint)' }}>{l}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* FİRMA BAZLI TAKİP */}
-      <h2 style={{ fontFamily:'Sora,sans-serif', fontSize:16, fontWeight:600, marginBottom:12 }}>Firma Bazlı Takip</h2>
-      <div className="card" style={{ overflow:'hidden', marginBottom:24 }}>
-        <div style={{ overflowX:'auto' }}>
-          <table>
+      {yukleniyor ? (
+        <div style={{ textAlign:'center', padding:60, color:'var(--text-faint)' }}>Yükleniyor...</div>
+      ) : (
+        <div className="card" style={{ overflow:'auto', padding:0 }}>
+          <table style={{ minWidth:1100, fontSize:11 }}>
             <thead>
-              <tr><th>Firma</th><th>Tehlike</th><th>Periyot</th><th>Bu Ay İGU</th><th>Bu Ay İH</th><th>Bu Ay DSP</th><th>Toplam</th></tr>
+              <tr style={{ background:'var(--surface-2)', borderBottom:'1px solid var(--border)' }}>
+                <th style={{ textAlign:'left', padding:'10px 12px', position:'sticky', left:0, background:'var(--surface-2)', zIndex:2, minWidth:220, borderRight:'1px solid var(--border)' }}>FİRMA</th>
+                <th style={{ textAlign:'center', padding:'10px 6px', minWidth:70 }}>TEHLİKE</th>
+                <th style={{ textAlign:'center', padding:'10px 6px', minWidth:60 }}>PERİYOT</th>
+                <th style={{ textAlign:'center', padding:'10px 6px', minWidth:80, color:'var(--blue)' }}>İGU</th>
+                <th style={{ textAlign:'center', padding:'10px 6px', minWidth:70, color:'var(--green)' }}>İH</th>
+                {AYLAR.map((ay,i) => (
+                  <th key={i} style={{
+                    textAlign:'center', padding:'10px 2px', minWidth:40,
+                    color: i===buAy&&yil===buYil ? 'var(--accent)' : 'var(--text-dim)',
+                    borderLeft: i===buAy&&yil===buYil ? '2px solid var(--accent)' : undefined,
+                    fontWeight: i===buAy&&yil===buYil ? 700 : 500
+                  }}>{ay}</th>
+                ))}
+              </tr>
             </thead>
             <tbody>
-              {yukleniyor ? <tr><td colSpan={7} style={{ textAlign:'center', color:'var(--text-faint)', padding:32 }}>Yükleniyor...</td></tr>
-               : firmaOzet.map(f => {
-                const igu = f.ziyaretler.filter((z:any)=>z.tur==='İGU').length
-                const ih = f.ziyaretler.filter((z:any)=>z.tur==='İH').length
-                const dsp = f.ziyaretler.filter((z:any)=>z.tur==='DSP').length
+              {firmalar.length === 0 ? (
+                <tr><td colSpan={17} style={{ textAlign:'center', padding:40, color:'var(--text-faint)' }}>Firma bulunamadı</td></tr>
+              ) : firmalar.map((firma, fi) => {
+                const atama = atamaDurumu(firma)
+                const satirBg = fi%2===0 ? 'var(--surface)' : 'var(--surface-2)'
+                const tiklanabilir = rol !== 'saha' || (firma.gorevli_igu?.includes(mevcutPersonel?.ad_soyad) || firma.gorevli_ih?.includes(mevcutPersonel?.ad_soyad))
                 return (
-                  <tr key={f.id}>
-                    <td style={{ fontWeight:500 }}>{f.unvan}</td>
-                    <td><span style={{ fontSize:12, color:f.tehlike_sinifi==='Çok Tehlikeli'?'var(--red)':f.tehlike_sinifi==='Tehlikeli'?'var(--amber)':'var(--green)' }}>{f.tehlike_sinifi}</span></td>
-                    <td style={{ color:'var(--text-dim)', fontSize:13 }}>{f.ziyaret_periyodu||'—'}</td>
-                    <td><span style={{ background:'var(--blue-soft)', color:'var(--blue)', padding:'3px 10px', borderRadius:6, fontSize:13, fontWeight:600 }}>{igu}</span></td>
-                    <td><span style={{ background:'var(--green-soft)', color:'var(--green)', padding:'3px 10px', borderRadius:6, fontSize:13, fontWeight:600 }}>{ih}</span></td>
-                    <td><span style={{ background:'var(--amber-soft)', color:'var(--amber)', padding:'3px 10px', borderRadius:6, fontSize:13, fontWeight:600 }}>{dsp}</span></td>
-                    <td style={{ fontWeight:700 }}>{igu+ih+dsp}</td>
-                    <td>
-                      {ih > 0
-                        ? <span style={{ color:'var(--green)', fontSize:12, fontWeight:600 }}>✓ Gidildi</span>
-                        : f.gorevli_ih
-                          ? <span style={{ color:'var(--red)', fontSize:12 }}>✗ {f.gorevli_ih || '—'}</span>
-                          : <span style={{ color:'var(--text-faint)', fontSize:12 }}>Atanmamış</span>
-                      }
+                  <tr key={firma.id} style={{ borderBottom:'1px solid var(--border)' }}>
+                    <td style={{ padding:'7px 12px', position:'sticky', left:0, background:satirBg, zIndex:1, borderRight:'1px solid var(--border)' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+                        <div style={{ width:7, height:7, borderRadius:'50%', flexShrink:0, background: atama==='kirmizi'?'#ef4444':atama==='sari'?'#f59e0b':'#22c55e' }}/>
+                        <span style={{ fontWeight:500 }}>{firma.unvan}</span>
+                      </div>
                     </td>
+                    <td style={{ textAlign:'center', padding:'7px 4px' }}>
+                      <span style={{ fontSize:10, color: firma.tehlike_sinifi==='Az Tehlikeli'?'var(--green)':firma.tehlike_sinifi==='Çok Tehlikeli'?'var(--red)':'var(--amber)' }}>
+                        {firma.tehlike_sinifi==='Az Tehlikeli'?'Az':firma.tehlike_sinifi==='Çok Tehlikeli'?'Çok T.':'Teh.'}
+                      </span>
+                    </td>
+                    <td style={{ textAlign:'center', padding:'7px 4px', color:'var(--text-dim)', fontSize:10 }}>
+                      {firma.ih_periyot==='0.5'?'Her ay':firma.ih_periyot==='1.0'?'2 ayda':`${parseFloat(firma.ih_periyot)*2}ayda`}
+                    </td>
+                    <td style={{ textAlign:'center', padding:'7px 4px' }}>
+                      <span style={{ fontSize:10, fontWeight:600, color:firma.gorevli_igu?'var(--blue)':'#ef4444' }}>{firma.gorevli_igu||'—'}</span>
+                    </td>
+                    <td style={{ textAlign:'center', padding:'7px 4px' }}>
+                      <span style={{ fontSize:10, fontWeight:600, color:firma.gorevli_ih?'var(--green)':'#ef4444' }}>{firma.gorevli_ih||'—'}</span>
+                    </td>
+                    {AYLAR.map((_,ayIdx) => {
+                      const durum = ziyaretDurumu(firma, ayIdx)
+                      const ayKey = `${yil}-${String(ayIdx+1).padStart(2,'0')}`
+                      const bilgi = (firma.aylik_ziyaretler||{})[ayKey]
+                      return (
+                        <td key={ayIdx} style={{
+                          textAlign:'center', padding:'5px 2px',
+                          borderLeft: ayIdx===buAy&&yil===buYil?'2px solid var(--accent)':undefined,
+                          background: durum==='gidildi'?'rgba(34,197,94,0.15)':durum==='gidilmedi'?'rgba(239,68,68,0.1)':'transparent'
+                        }}>
+                          {durum==='gelecek' ? (
+                            <div style={{ width:16, height:16, border:'1px dashed var(--border)', borderRadius:3, margin:'0 auto', opacity:0.4 }}/>
+                          ) : durum==='gidildi' ? (
+                            <div title={bilgi?.tarih?`${bilgi.tarih} · ${bilgi.tur}`:''} style={{ width:16, height:16, background:'#22c55e', borderRadius:3, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', cursor:'default' }}>
+                              <span style={{ color:'white', fontSize:9, fontWeight:700 }}>✓</span>
+                            </div>
+                          ) : (
+                            <div onClick={() => tiklanabilir?(setDetayFirma(firma),setDetayAy(ayIdx)):null}
+                              title={durum==='gidilmedi'?'Gecikme — tıkla kaydet':'Tıkla kaydet'}
+                              style={{ width:16, height:16, border:`2px solid ${durum==='gidilmedi'?'#ef4444':'var(--border)'}`, borderRadius:3, margin:'0 auto', cursor:tiklanabilir?'pointer':'default', background:durum==='gidilmedi'?'rgba(239,68,68,0.08)':'transparent' }}/>
+                          )}
+                        </td>
+                      )
+                    })}
                   </tr>
                 )
               })}
             </tbody>
           </table>
         </div>
+      )}
+
+      <div style={{ display:'flex', gap:16, marginTop:10, fontSize:11 }}>
+        {[['#ef4444','KIRMIZI · Atama Yok'],['#f59e0b','SARI · Onay Bekliyor'],['#22c55e','YEŞİL · Atama Onaylı']].map(([r,l],i)=>(
+          <div key={i} style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <div style={{ width:9, height:9, borderRadius:'50%', background:r }}/>
+            <span style={{ color:'var(--text-faint)' }}>{l}</span>
+          </div>
+        ))}
       </div>
 
-      {/* ZİYARET LİSTESİ */}
-      <h2 style={{ fontFamily:'Sora,sans-serif', fontSize:16, fontWeight:600, marginBottom:12 }}>Ziyaret Kayıtları</h2>
-      <div className="card" style={{ overflow:'hidden' }}>
-        <div style={{ overflowX:'auto' }}>
-          <table>
-            <thead>
-              <tr><th>Tarih</th><th>Firma</th><th>Ziyaret Eden</th><th>Rol</th><th>Tür</th><th>Notlar</th><th></th></tr>
-            </thead>
-            <tbody>
-              {yukleniyor ? <tr><td colSpan={7} style={{ textAlign:'center', color:'var(--text-faint)', padding:32 }}>Yükleniyor...</td></tr>
-               : ziyaretler.length === 0 ? <tr><td colSpan={7} style={{ textAlign:'center', color:'var(--text-faint)', padding:32 }}>Bu ay ziyaret yok</td></tr>
-               : filtreli.map(z => (
-                <tr key={z.id}>
-                  <td style={{ color:'var(--text-dim)', whiteSpace:'nowrap' }}>{new Date(z.tarih+'T00:00:00').toLocaleDateString('tr-TR')}</td>
-                  <td style={{ fontWeight:500 }}>{z.firmalar?.unvan||'—'}</td>
-                  <td>{z.personeller?.ad_soyad || z.ziyaret_eden || '—'}</td>
-                  <td style={{ fontSize:12, color:'var(--text-faint)' }}>{z.personeller?.rol ? (({'yonetici':'Yönetici','operasyon':'Operasyon','hekim':'Hekim','satis':'Satış','muhasebe':'Muhasebe','saha':'Saha'} as Record<string,string>)[String(z.personeller.rol)]||'—') : '—'}</td>
-                  <td><span className="badge" style={{ background:`${TUR_RENK[z.tur]}22`, color:TUR_RENK[z.tur] }}>{z.tur}</span></td>
-                  <td style={{ color:'var(--text-dim)', fontSize:13 }}>{z.notlar||'—'}</td>
-                  <td><button onClick={()=>sil(z)} style={{ background:'none', border:'none', color:'var(--text-faint)', cursor:'pointer', padding:4 }}><Trash2 size={14}/></button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {modal && (
-        <div className="modal-overlay" onClick={()=>setModal(false)}>
-          <div className="modal-content" onClick={e=>e.stopPropagation()}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
-              <h2 style={{ fontFamily:'Sora,sans-serif', fontSize:20, fontWeight:600, display:'flex', alignItems:'center', gap:10 }}><MapPin size={20} color="var(--blue)"/> Ziyaret Ekle</h2>
-              <button onClick={()=>setModal(false)} style={xBtn}><X size={22}/></button>
+      {detayFirma && detayAy!==null && (
+        <div className="modal-overlay" onClick={()=>{setDetayFirma(null);setDetayAy(null)}}>
+          <div className="modal-content" onClick={e=>e.stopPropagation()} style={{ maxWidth:400 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+              <div>
+                <h2 style={{ fontFamily:'Sora,sans-serif', fontSize:18, fontWeight:600, display:'flex', alignItems:'center', gap:8 }}>
+                  <MapPin size={17} color="var(--green)"/> Ziyaret Kaydet
+                </h2>
+                <p style={{ fontSize:11, color:'var(--text-dim)', marginTop:3 }}>{detayFirma.unvan} — {AYLAR_FULL[detayAy]} {yil}</p>
+              </div>
+              <button onClick={()=>{setDetayFirma(null);setDetayAy(null)}} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-dim)' }}><X size={20}/></button>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div>
-                <label style={lbl}>Firma *</label>
-                <select value={form.firma_id} onChange={e=>setForm({...form, firma_id:e.target.value})}>
-                  <option value="">Seçiniz...</option>
-                  {firmalar.map(f=><option key={f.id} value={f.id}>{f.unvan}</option>)}
-                </select>
+                <label style={{ fontSize:12, color:'var(--text-dim)', display:'block', marginBottom:6, fontWeight:500 }}>Tarih</label>
+                <input type="date" value={form.tarih} onChange={e=>setForm(f=>({...f,tarih:e.target.value}))}/>
               </div>
-              <div className="modal-grid">
-                <div>
-                  <label style={lbl}>Tarih</label>
-                  <input type="date" value={form.tarih} onChange={e=>setForm({...form, tarih:e.target.value})}/>
-                </div>
-                <div>
-                  <label style={lbl}>Tür</label>
-                  <div style={{ display:'flex', gap:6 }}>
-                    {['İGU','İH','DSP'].map(t=>(
-                      <button key={t} type="button" onClick={()=>setForm({...form, tur:t})}
-                        style={{ flex:1, padding:'9px', borderRadius:8, fontSize:13, cursor:'pointer', fontFamily:'inherit',
-                          background:form.tur===t?`${TUR_RENK[t]}22`:'var(--surface-2)',
-                          border:`1px solid ${form.tur===t?TUR_RENK[t]:'var(--border)'}`,
-                          color:form.tur===t?TUR_RENK[t]:'var(--text-dim)' }}>{t}</button>
-                    ))}
-                  </div>
+              <div>
+                <label style={{ fontSize:12, color:'var(--text-dim)', display:'block', marginBottom:6, fontWeight:500 }}>Tür</label>
+                <div style={{ display:'flex', gap:8 }}>
+                  {['İGU','İH','DSP'].map(t=>(
+                    <button key={t} onClick={()=>setForm(f=>({...f,tur:t}))}
+                      style={{ flex:1, padding:'9px', borderRadius:8, fontSize:13, cursor:'pointer', fontFamily:'inherit',
+                        background:form.tur===t?'var(--accent-soft)':'var(--surface-2)',
+                        border:`1px solid ${form.tur===t?'var(--accent)':'var(--border)'}`,
+                        color:form.tur===t?'var(--accent)':'var(--text-dim)' }}>{t}</button>
+                  ))}
                 </div>
               </div>
               <div>
-                <label style={lbl}>Ziyaret Eden *</label>
-                <select value={form.ziyaret_eden_id} onChange={e=>setForm({...form, ziyaret_eden_id:e.target.value})}>
-                  <option value="">Seçiniz...</option>
-                  {uzmanlar.length > 0 && <optgroup label="Uzman / Operasyon">{uzmanlar.map(p=><option key={p.id} value={p.id}>{p.ad_soyad}</option>)}</optgroup>}
-                  {hekimler.length > 0 && <optgroup label="Hekim">{hekimler.map(p=><option key={p.id} value={p.id}>{p.ad_soyad}</option>)}</optgroup>}
-                </select>
+                <label style={{ fontSize:12, color:'var(--text-dim)', display:'block', marginBottom:6, fontWeight:500 }}>Notlar</label>
+                <textarea value={form.notlar} onChange={e=>setForm(f=>({...f,notlar:e.target.value}))} placeholder="Ziyaret notu..." rows={3}
+                  style={{ width:'100%', padding:'10px 12px', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:10, color:'var(--text)', fontSize:13, fontFamily:'inherit', resize:'vertical' }}/>
               </div>
-              <div>
-                <label style={lbl}>Notlar</label>
-                <textarea rows={2} value={form.notlar} onChange={e=>setForm({...form, notlar:e.target.value})} placeholder="Ziyaret özeti..."/>
+              <div style={{ display:'flex', gap:10 }}>
+                <button className="btn-ghost btn" style={{ flex:1, justifyContent:'center' }} onClick={()=>{setDetayFirma(null);setDetayAy(null)}}>İptal</button>
+                <button className="btn" style={{ flex:1, justifyContent:'center' }} onClick={ziyaretEkle} disabled={kayitYukleniyor}>
+                  {kayitYukleniyor?'Kaydediliyor...':'Kaydet'}
+                </button>
               </div>
-            </div>
-            {hata && <div style={{ background:'var(--red-soft)', color:'var(--red)', padding:'10px 14px', borderRadius:8, fontSize:13, marginTop:12 }}>{hata}</div>}
-            <div style={{ display:'flex', gap:10, marginTop:20 }}>
-              <button className="btn btn-ghost" style={{ flex:1, justifyContent:'center' }} onClick={()=>setModal(false)}>İptal</button>
-              <button className="btn" style={{ flex:1, justifyContent:'center' }} onClick={kaydet}>Kaydet</button>
             </div>
           </div>
         </div>
@@ -268,6 +299,3 @@ export default function Ziyaretler() {
     </div>
   )
 }
-const lbl: any = { display:'block', fontSize:12, color:'var(--text-dim)', marginBottom:6, fontWeight:500 }
-const xBtn: any = { background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer' }
-const navBtn: any = { background:'var(--surface)', border:'1px solid var(--border)', color:'var(--text-dim)', borderRadius:8, padding:'8px', cursor:'pointer', display:'flex', alignItems:'center' }
