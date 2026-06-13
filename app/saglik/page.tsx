@@ -168,13 +168,13 @@ export default function Saglik() {
           <Search size={15} style={{ position: 'absolute', left: 10, top: 11, color: 'var(--text-faint)' }} />
           <input value={arama} onChange={e => setArama(e.target.value)} placeholder="Hasta veya firma ara..." style={{ paddingLeft: 34, width: 200 }} />
         </div>
-        <input type="date" value={basTarih} onChange={e => setBasTarih(e.target.value)} style={{ padding: '10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }} />
-        <input type="date" value={bitTarih} onChange={e => setBitTarih(e.target.value)} style={{ padding: '10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }} />
-        <select value={hekimFiltre} onChange={e => setHekimFiltre(e.target.value)} style={{ padding: '10px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }}>
+        <input type="date" value={basTarih} onChange={e => setBasTarih(e.target.value)} style={{ padding: '8px 10px', width: 150, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }} />
+        <input type="date" value={bitTarih} onChange={e => setBitTarih(e.target.value)} style={{ padding: '8px 10px', width: 150, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }} />
+        <select value={hekimFiltre} onChange={e => setHekimFiltre(e.target.value)} style={{ padding: '8px 12px', width: 150, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }}>
           <option value="Hepsi">Tüm Hekimler</option>
           {hekimler.map((h: any) => <option key={h.id} value={h.id}>{h.ad_soyad}</option>)}
         </select>
-        <select value={odemeFiltre} onChange={e => setOdemeFiltre(e.target.value)} style={{ padding: '10px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }}>
+        <select value={odemeFiltre} onChange={e => setOdemeFiltre(e.target.value)} style={{ padding: '8px 12px', width: 120, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }}>
           {['Hepsi', 'Peşin', 'Cari', 'İBAN', 'POS'].map(o => <option key={o}>{o}</option>)}
         </select>
         <button onClick={exportCSV} style={{ padding: '10px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>↓ CSV</button>
