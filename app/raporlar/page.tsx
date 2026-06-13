@@ -34,6 +34,7 @@ export default function Raporlar() {
   const [taramalar, setTaramalar] = useState<any[]>([])
   const [malzemeler, setMalzemeler] = useState<any[]>([])
   const [cariler, setCariler] = useState<any[]>([])
+  const [cokYilHasta, setCokYilHasta] = useState<any[]>([])
 
   const sb = createClient()
   useEffect(() => { yukle() }, [yil])
@@ -68,6 +69,21 @@ export default function Raporlar() {
     setTaramalar(taRes.data || [])
     setMalzemeler(mRes.data || [])
     setCariler(cRes.data || [])
+
+    // 4 yıllık hasta sayısı karşılaştırma
+    const yillar = [yil-3, yil-2, yil-1, yil]
+    const cokYilRes = await Promise.all(
+      yillar.map(y => sb.from('hasta_kayitlari').select('tarih').gte('tarih', `${y}-01-01`).lte('tarih', `${y}-12-31`))
+    )
+    const cokYilSeri = AYLAR.map((ay, i) => {
+      const obj: any = { ay }
+      yillar.forEach((y, yi) => {
+        obj[y] = (cokYilRes[yi].data || []).filter((h: any) => new Date(h.tarih).getMonth() === i).length
+      })
+      return obj
+    })
+    setCokYilHasta(cokYilSeri)
+
     setYukleniyor(false)
   }
 
@@ -381,6 +397,29 @@ export default function Raporlar() {
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* 4 YILLIK HASTA KARŞILAŞTIRMA */}
+          {cokYilHasta.length > 0 && (
+            <div className="card" style={{ padding:20 }}>
+              <div style={{ fontSize:14, fontWeight:600, marginBottom:4 }}>Yıllara Göre Aylık Hasta Sayısı</div>
+              <div style={{ fontSize:12, color:'var(--text-faint)', marginBottom:16 }}>{yil-3} · {yil-2} · {yil-1} · {yil} karşılaştırması</div>
+              <div style={{ height:240 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={cokYilHasta} margin={{ left:0, right:0 }}>
+                    <XAxis dataKey="ay" stroke="#5d5d6b" fontSize={11} tickLine={false} axisLine={false}/>
+                    <YAxis stroke="#5d5d6b" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} width={28}/>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)"/>
+                    <Tooltip contentStyle={TT_STYLE}/>
+                    <Legend wrapperStyle={{ fontSize:11 }}/>
+                    <Bar dataKey={yil-3} fill="#6366f1" radius={[3,3,0,0]} barSize={8}/>
+                    <Bar dataKey={yil-2} fill="#f59e0b" radius={[3,3,0,0]} barSize={8}/>
+                    <Bar dataKey={yil-1} fill="#10b981" radius={[3,3,0,0]} barSize={8}/>
+                    <Bar dataKey={yil} fill="#3b82f6" radius={[3,3,0,0]} barSize={8}/>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
 
           {/* FİRMA CİRO */}
           {firmaCiro.length > 0 && (
