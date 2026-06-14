@@ -86,7 +86,7 @@ export default function Firmalar() {
       gorevli_ih:'', ih_id:'', ih_atama_tarihi:'', ih_atama_durum:'yok',
       gorevli_dsp:'', dsp_id:'', bhl_atama:'', bhl_atama_durum:'yok', atama_aciklama:'', dr_sure:'', uzman_sure:'',
       ziyaret_periyodu:'', gorevli_ih_giden:'', gorevli_igu_giden:'', ih_periyot:'',
-      kisi_basi_ucret:'', kisi_basi_ucret_yeni:'', paket_2808:'', paket_3000:'', paket_3434:'',
+      kisi_basi_ucret:'', kisi_basi_ucret_yeni:'', paket_2808:'', paket_3000:'', paket_3434:'', ilave_tutar:'0',
       aktif: true, pasif_neden: '', fatura_kesildi_aylar: {}
     }
   }
@@ -143,6 +143,7 @@ export default function Firmalar() {
       uzman_sure: Number(form.uzman_sure)||null,
       kisi_basi_ucret: Number(form.kisi_basi_ucret)||0,
       kisi_basi_ucret_yeni: Number(form.kisi_basi_ucret_yeni)||0,
+      ilave_tutar: Number(form.ilave_tutar)||0,
       paket_2808: Number(form.paket_2808)||0,
       paket_3000: Number(form.paket_3000)||0,
       paket_3434: Number(form.paket_3434)||0,
@@ -301,6 +302,7 @@ export default function Firmalar() {
       gorevli_ih_giden: f.gorevli_ih_giden||'', gorevli_igu_giden: f.gorevli_igu_giden||'', ih_periyot: f.ih_periyot||'',
       kisi_basi_ucret: f.kisi_basi_ucret?.toString()||'',
       kisi_basi_ucret_yeni: f.kisi_basi_ucret_yeni?.toString()||'',
+      ilave_tutar: f.ilave_tutar?.toString()||'0',
       aktif: f.aktif !== false,
       pasif_neden: f.pasif_neden||'',
       fatura_kesildi_aylar: f.fatura_kesildi_aylar || {},
@@ -634,6 +636,35 @@ export default function Firmalar() {
                 </div>
               ))}
             </div>
+            {/* AYLIK TUTAR HESAPLAMA */}
+            {(() => {
+              const ayIdx = new Date().getMonth()
+              const ayAnahtar = ['ocak','subat','mart','nisan','mayis','haziran','temmuz','agustos','eylul','ekim','kasim','aralik'][ayIdx]
+              const kisi = Number((detay as any)[ayAnahtar+'_kisi']) || 0
+              const birimFiyat = Number(detay.kisi_basi_ucret_yeni) || Number(detay.kisi_basi_ucret) || 0
+              const kisiTutar = kisi * birimFiyat
+              const ilave = Number(detay.ilave_tutar) || 0
+              const toplam = kisiTutar + ilave
+              if (!birimFiyat) return null
+              return (
+                <div style={{ marginTop:14, padding:'12px 14px', background:'var(--surface-2)', borderRadius:10, display:'flex', flexDirection:'column', gap:8 }}>
+                  <div style={{ fontSize:11, color:'var(--text-faint)', fontWeight:600, letterSpacing:0.5, textTransform:'uppercase' }}>Aylık Fatura Hesabı</div>
+                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:13 }}>
+                    <span style={{ color:'var(--text-dim)' }}>Kişi Başı Ücret × {kisi} Kişi</span>
+                    <span style={{ fontWeight:600 }}>{new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(kisiTutar)}</span>
+                  </div>
+                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:13 }}>
+                    <span style={{ color:'var(--text-dim)' }}>İlave Fatura Tutarı</span>
+                    <span style={{ fontWeight:600, color: ilave > 0 ? 'var(--amber)' : 'var(--text-faint)' }}>{new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(ilave)}</span>
+                  </div>
+                  <div style={{ borderTop:'1px solid var(--border)', paddingTop:8, display:'flex', justifyContent:'space-between', fontSize:14 }}>
+                    <span style={{ fontWeight:600 }}>Toplam Aylık Tutar</span>
+                    <span style={{ fontFamily:'Sora,sans-serif', fontWeight:700, color:'var(--green)', fontSize:16 }}>{new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(toplam)}</span>
+                  </div>
+                </div>
+              )
+            })()}
+
             {detay.atama_aciklama && (
               <div style={{ marginTop:12, padding:'10px 12px', background:'var(--surface-2)', borderRadius:8, fontSize:13, color:'var(--text-dim)' }}>
                 <span style={{ color:'var(--text-faint)', fontSize:11, display:'block', marginBottom:4 }}>Atama Açıklaması</span>
@@ -821,6 +852,7 @@ export default function Firmalar() {
               <div className="modal-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 <div><label style={lbl}>Kişi Başı Ücret (₺)</label><input type="number" value={form.kisi_basi_ucret} onChange={e=>setForm({...form, kisi_basi_ucret:e.target.value})} /></div>
                 <div><label style={lbl}>Kişi Başı (Yeni) (₺)</label><input type="number" value={form.kisi_basi_ucret_yeni} onChange={e=>setForm({...form, kisi_basi_ucret_yeni:e.target.value})} /></div>
+                <div><label style={lbl}>İlave Fatura Tutarı (₺)</label><input type="number" placeholder="0" value={form.ilave_tutar} onChange={e=>setForm({...form, ilave_tutar:e.target.value})} /></div>
                 <div><label style={lbl}>Paket 2808 (₺)</label><input type="number" value={form.paket_2808} onChange={e=>setForm({...form, paket_2808:e.target.value})} /></div>
                 <div><label style={lbl}>Paket 3000 (₺)</label><input type="number" value={form.paket_3000} onChange={e=>setForm({...form, paket_3000:e.target.value})} /></div>
                 <div><label style={lbl}>Paket 3434 (₺)</label><input type="number" value={form.paket_3434} onChange={e=>setForm({...form, paket_3434:e.target.value})} /></div>
