@@ -446,10 +446,6 @@ export default function Ziyaretler() {
                   ))}
                 </select>
               </div>
-              <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', background:'var(--surface-2)', borderRadius:10, border:'1px solid var(--border)' }}>
-                <input type="checkbox" id="fatura_cb" checked={form.fatura} onChange={e=>setForm(f=>({...f,fatura:e.target.checked}))} style={{ width:16, height:16, cursor:'pointer' }}/>
-                <label htmlFor="fatura_cb" style={{ fontSize:13, color:'var(--text)', cursor:'pointer', fontWeight:500 }}>Fatura kesildi</label>
-              </div>
               <div>
                 <label style={{ fontSize:12, color:'var(--text-dim)', display:'block', marginBottom:6, fontWeight:500 }}>Notlar</label>
                 <textarea value={form.notlar} onChange={e=>setForm(f=>({...f,notlar:e.target.value}))} placeholder="Ziyaret notu..." rows={3}
