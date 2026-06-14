@@ -8,7 +8,7 @@ import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip, BarChart, Bar, Ce
 
 // Rollere göre hangi kartlar görünür
 const ROL_KARTLAR: Record<string, string[]> = {
-  yonetici:  ['firma','hasta','teklif','ciroKart','ziyaret','ciro','grafik','uyari','saglikRaporu'],
+  yonetici:  ['firma','hasta','teklif','ciroKart','ziyaret','ciro','grafik','uyari','gorev','saglikRaporu'],
   muhasebe:  ['ciroKart','ziyaret','uyari','saglikRaporu'],
   operasyon: ['firma','ziyaret','gorev','saglikRaporu'],
   hekim:     ['hasta','saglikRaporu'],
