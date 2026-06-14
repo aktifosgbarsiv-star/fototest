@@ -2,12 +2,12 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 const ROL_ERISIM: Record<string, string[]> = {
-  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler'],
-  operasyon: ['/','/ara','/firmalar','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler'],
-  hekim:     ['/','/saglik','/hekim','/koordinasyon'],
+  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv'],
+  operasyon: ['/','/ara','/firmalar','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
+  hekim:     ['/','/saglik','/hekim','/koordinasyon','/arsiv'],
   satis:     ['/','/teklifler','/malzemeler','/tedarikciler'],
   muhasebe:  ['/','/tahsilat','/saglik','/fatura'],
-  saha:      ['/','/koordinasyon','/ziyaretler'],
+  saha:      ['/','/koordinasyon','/ziyaretler','/arsiv'],
 }
 
 export async function middleware(req: NextRequest) {
