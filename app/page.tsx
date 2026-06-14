@@ -19,6 +19,7 @@ const ROL_KARTLAR: Record<string, string[]> = {
 export default function Dashboard() {
   const [stats, setStats] = useState<any>({ firma:0, hasta:0, teklif:0, acikBakiye:0, vadeGecen:0, aylikCiro:0, ziyaret:0, gorev:0 })
   const [ziyaretStat, setZiyaretStat] = useState<any>({ yapilan:0, bekleyen:0 })
+  const [acikGorevler, setAcikGorevler] = useState<any[]>([])
   const [saglikStat, setSaglikStat] = useState<any>({ bugun:0, hafta:0, ay:0, yil:0, ciroBugun:0, ciroAy:0 })
   const [bekleyenTeklif, setBekleyenTeklif] = useState<number>(0)
   const [ciroData, setCiroData] = useState<any[]>([])
@@ -64,8 +65,8 @@ export default function Dashboard() {
       if (izin.includes('uyari')) queries.push(sb.from('borcuyarilari').select('*').eq('goruldu', false).order('gecen_gun_sayisi', { ascending:false }).limit(10))
       else queries.push(Promise.resolve({ data: [] }))
 
-      if (izin.includes('gorev')) queries.push(sb.from('gorevler').select('id', { count:'exact', head:true }).in('durum',['Planlandı','Bekliyor']).gte('tarih', ayBas).lte('tarih', ayBit))
-      else queries.push(Promise.resolve({ count: 0 }))
+      if (izin.includes('gorev')) queries.push(sb.from('gorevler').select('id,konu,firma_adi,durum,son_tarih,uzman,tarih').in('durum',['Planlandı','Bekliyor']).order('son_tarih', { ascending:true }).limit(5))
+      else queries.push(Promise.resolve({ data: [] }))
 
       const [firma, hasta, teklif, cariler, ziyaret, uyari, gorev] = await Promise.all(queries)
 
@@ -81,7 +82,8 @@ export default function Dashboard() {
         hastaCount = count || 0
       }
 
-      setStats({ firma: firma.count||0, hasta: hastaCount, teklif: (teklif.data||[]).filter((t:any) => t.surec_durumu==='Beklemede').length, acikBakiye, vadeGecen, aylikCiro, ziyaret: ziyaret.count||0, gorev: gorev.count||0 })
+      setStats({ firma: firma.count||0, hasta: hastaCount, teklif: (teklif.data||[]).filter((t:any) => t.surec_durumu==='Beklemede').length, acikBakiye, vadeGecen, aylikCiro, ziyaret: ziyaret.count||0, gorev: (gorev.data||[]).length })
+      setAcikGorevler(gorev.data || [])
 
       // Ziyaret bekleyen hesaplama
       if (izin.includes('ziyaret')) {
@@ -239,6 +241,48 @@ export default function Dashboard() {
             </div>
           </div>
         </Link>
+      )}
+
+      {/* AÇIK GÖREVLER */}
+      {izin.includes('gorev') && acikGorevler.length > 0 && (
+        <div style={{ marginBottom:16 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <CalendarDays size={15} color="var(--accent)"/>
+              <span style={{ fontWeight:600, fontSize:14 }}>Açık Görevler</span>
+              <span style={{ fontSize:11, background:'var(--accent-soft)', color:'var(--accent)', padding:'2px 7px', borderRadius:10, fontWeight:600 }}>{acikGorevler.length}</span>
+            </div>
+            <Link href="/koordinasyon" style={{ fontSize:12, color:'var(--accent)', textDecoration:'none' }}>Tümü →</Link>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            {acikGorevler.map((g:any) => {
+              const gecikti = g.son_tarih && g.son_tarih < new Date().toISOString().slice(0,10)
+              return (
+                <Link key={g.id} href="/koordinasyon" style={{ textDecoration:'none', color:'inherit' }}>
+                  <div className="card" style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', borderLeft: gecikti ? '3px solid var(--red)' : '3px solid var(--accent)' }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:13, fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {g.konu || g.firma_adi || 'Görev'}
+                      </div>
+                      <div style={{ fontSize:11, color:'var(--text-faint)', marginTop:2 }}>
+                        {g.uzman && <span>{g.uzman} · </span>}
+                        {g.firma_adi && g.konu && <span>{g.firma_adi} · </span>}
+                        <span style={{ color: gecikti ? 'var(--red)' : 'var(--text-faint)' }}>
+                          {g.son_tarih ? new Date(g.son_tarih+'T00:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) : g.tarih ? new Date(g.tarih+'T00:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) : '—'}
+                        </span>
+                      </div>
+                    </div>
+                    <span style={{ fontSize:10, padding:'2px 8px', borderRadius:6, fontWeight:600, flexShrink:0,
+                      background: g.durum==='Bekliyor' ? 'var(--amber-soft)' : 'var(--blue-soft)',
+                      color: g.durum==='Bekliyor' ? 'var(--amber)' : 'var(--blue)' }}>
+                      {g.durum}
+                    </span>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
       )}
 
       {/* AKTİVİTE AKIŞI */}
