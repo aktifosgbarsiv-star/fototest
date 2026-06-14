@@ -80,7 +80,7 @@ export default function Saglik() {
     const to = from + SAYFA_BOYUTU - 1
 
     let q = sb.from('hasta_kayitlari')
-      .select('id, tarih, ad_soyad, dogum_tarihi, telefon, firma, ucret, odeme_sekli, tetkikler, hekim_id', { count: 'exact' })
+      .select('id, tarih, ad_soyad, dogum_tarihi, telefon, firma, ucret, odeme_sekli, tetkikler, hekim_id, gaita, tit, hbsag, antihbs, hcv, hiv, kan_grubu, goz, isg_egitim, aciklama, pr_no', { count: 'exact' })
       .order('tarih', { ascending: false })
       .range(from, to)
 

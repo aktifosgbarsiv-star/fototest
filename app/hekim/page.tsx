@@ -2,7 +2,8 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { HeartPulse, Search, ChevronLeft, ChevronRight, Check, Building2, Clock, AlertTriangle } from 'lucide-react'
+import { HeartPulse, Search, ChevronLeft, ChevronRight, Check, Building2, Clock, AlertTriangle, Download } from 'lucide-react'
+import { csvIndir } from '@/lib/csvExport'
 
 const TETKIKLER = ['EK2','AKC','ODİO','SFT','EKG','CBC','AST','ALT','ÜRE','KREATİNİN','GLUKOZ','BURUN','BOĞAZ']
 const ODEME_RENK: any = { Cari:'var(--amber)', İBAN:'var(--blue)', Peşin:'var(--green)', POS:'var(--accent)' }
@@ -138,6 +139,21 @@ export default function HekimEkrani() {
 
   const ayLabel = new Date().toLocaleDateString('tr-TR', { month:'long', year:'numeric' })
 
+
+  function exportCSV() {
+    const simdi = new Date()
+    const buAy = `${simdi.getFullYear()}-${String(simdi.getMonth()+1).padStart(2,'0')}`
+    const rows = firmalar.map((f: any) => {
+      const d = ziyaretDurumlari.find((z: any) => z.firma_id === f.id && z.ay === buAy)
+      return {
+        'Firma': f.unvan||'', 'Tehlike': f.tehlike_sinifi||'', 'Bölge': f.bolge||'',
+        'Çalışan': f.calisan_sayisi||'', 'İH Periyot': f.ih_periyot||'',
+        'Ziyaret Edildi': d?.gidildi ? 'Evet' : 'Hayır',
+        'Ziyaret Tarihi': d?.gidilen_tarih||'', 'Notlar': d?.notlar||'',
+      }
+    })
+    csvIndir(rows, `hekim_ziyaret_${buAy}`)
+  }
   return (
     <div className="page-wrap">
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12, marginBottom:20 }}>

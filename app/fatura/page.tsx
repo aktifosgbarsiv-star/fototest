@@ -2,7 +2,8 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { ChevronLeft, ChevronRight, Check, AlertTriangle, Info, FileText, Plus, X, Clock, Upload } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, AlertTriangle, Info, FileText, Plus, X, Clock, Upload, Download } from 'lucide-react'
+import { csvIndir } from '@/lib/csvExport'
 
 /*
   FATURA SAYFASI — MUHASEBE MODÜLÜ
@@ -291,6 +292,23 @@ export default function Fatura() {
     return f.fatura && (!d || !d.fatura_kesildi)
   }).length
 
+
+  function exportCSV() {
+    const rows: any[] = []
+    firmalar.forEach((f: any) => {
+      const d = donemBul(f.id)
+      rows.push({
+        'Ünvan': f.unvan||'', 'SGK Sicil': f.sgk_sicil||'', 'Bölge': f.bolge||'',
+        'Tehlike': f.tehlike_sinifi||'', 'Çalışan': d?.calisan_sayisi??'',
+        'Kişi Başı': d?.kisi_basi_ucret||f.kisi_basi_ucret||'',
+        'Fatura Tutarı': d?.fatura_tutari??'',
+        'Fatura Kesildi': d?.fatura_kesildi ? 'Evet' : 'Hayır',
+        'Fatura No': d?.fatura_no||'',
+        'İGU': f.gorevli_igu||'', 'İH': f.gorevli_ih||'',
+      })
+    })
+    csvIndir(rows, `fatura_${ay}`)
+  }
   return (
     <div className="page-wrap">
       {/* BAŞLIK */}
@@ -312,7 +330,8 @@ export default function Fatura() {
           </button>
           <button onClick={()=>ayDegistir(-1)} style={navBtn}><ChevronLeft size={16}/></button>
           <span style={{ fontFamily:'Sora,sans-serif', fontWeight:700, fontSize:16, minWidth:130, textAlign:'center' }}>{ayLabel}</span>
-          <button onClick={()=>ayDegistir(1)} style={navBtn}><ChevronRight size={16}/></button>
+          <button onClick={()=>ayDegistir(1)} style={navBtn}><ChevronRight size={16}/>
+          <button onClick={exportCSV} style={{ padding:'7px 12px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', cursor:'pointer', color:'var(--text-dim)', fontSize:13, display:'flex', alignItems:'center', gap:5 }}><Download size={14}/> CSV</button></button>
         </div>
       </div>
 

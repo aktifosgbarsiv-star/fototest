@@ -31,7 +31,7 @@ export default function GlobalArama() {
     setYukleniyor(true)
     const [hRes, fRes, tRes] = await Promise.all([
       sb.from('hasta_kayitlari')
-        .select('id, tarih, ad_soyad, dogum_tarihi, firma, ucret, odeme_sekli')
+        .select('id, tarih, ad_soyad, dogum_tarihi, telefon, firma, ucret, odeme_sekli, tetkikler, pr_no')
         .or(`ad_soyad.ilike.%${q}%,firma.ilike.%${q}%,telefon.ilike.%${q}%`)
         .order('tarih', { ascending: false })
         .limit(20),
