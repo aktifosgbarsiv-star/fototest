@@ -27,7 +27,6 @@ export default function Firmalar() {
   const [hata, setHata] = useState('')
   const [form, setForm] = useState<any>(bosForm())
   const [kulRol, setKulRol] = useState<string>('operasyon')
-  const [donemTakip, setDonemTakip] = useState<any[]>([])
   const [pasifModal, setPasifModal] = useState<any>(null) // { firma }
   const [pasifNeden, setPasifNeden] = useState('')
   const [aktifFiltre, setAktifFiltre] = useState<'aktif'|'pasif'|'hepsi'>('aktif')
@@ -43,34 +42,30 @@ export default function Firmalar() {
   const buYil = new Date().getFullYear()
   const AY_KODLARI = ['01','02','03','04','05','06','07','08','09','10','11','12']
   const AY_ADLARI = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
+  const AY_KISILER = ['ocak_kisi','subat_kisi','mart_kisi','nisan_kisi','mayis_kisi','haziran_kisi','temmuz_kisi','agustos_kisi','eylul_kisi','ekim_kisi','kasim_kisi','aralik_kisi']
 
-  function getDonem(firma_id: string, ayIdx: number) {
+  function getFaturaKesildi(firma: any, ayIdx: number): boolean {
     const ay = buYil + '-' + AY_KODLARI[ayIdx]
-    return donemTakip.find(d => d.firma_id === firma_id && d.ay === ay)
+    return !!(firma.fatura_kesildi_aylar || {})[ay]
   }
 
-  function ayToplamCiro(ayIdx: number) {
-    const ay = buYil + '-' + AY_KODLARI[ayIdx]
-    return donemTakip.filter(d => d.ay === ay).reduce((s,d) => s + (Number(d.fatura_tutari)||0), 0)
+  function ayToplamCiro(ayIdx: number): number {
+    return firmalar.reduce((s, f) => {
+      const kisi = Number(f[AY_KISILER[ayIdx]]) || 0
+      const fiyat = Number(f.kisi_basi_ucret_yeni) || Number(f.kisi_basi_ucret) || 0
+      return s + kisi * fiyat
+    }, 0)
   }
 
   async function toggleFatura(firma: any, ayIdx: number, e: any) {
     e.stopPropagation()
-    if (kulRol !== 'muhasebe' && kulRol !== 'yonetici') return
+    if (!(['muhasebe','yonetici'] as string[]).includes(kulRol)) return
     const ay = buYil + '-' + AY_KODLARI[ayIdx]
-    const mevcut = getDonem(firma.id, ayIdx)
-    const yeniDurum = !(mevcut?.fatura_kesildi || false)
-    if (mevcut) {
-      await sb.from('donem_takip').update({ fatura_kesildi: yeniDurum }).eq('firma_id', firma.id).eq('ay', ay)
-    } else {
-      const kisi = firma['AY_KISI_' + ayIdx] ?? firma.calisan_sayisi ?? 0
-      const kisiBasiUcret = Number(firma.kisi_basi_ucret_yeni) || Number(firma.kisi_basi_ucret) || 0
-      await sb.from('donem_takip').insert({ firma_id: firma.id, ay, calisan_sayisi: kisi, fatura_tutari: kisi * kisiBasiUcret, fatura_kesildi: yeniDurum })
-    }
-    setDonemTakip(prev => {
-      const filtered = prev.filter(d => !(d.firma_id === firma.id && d.ay === ay))
-      return [...filtered, { ...(mevcut||{ firma_id: firma.id, ay }), fatura_kesildi: yeniDurum }]
-    })
+    const mevcut = firma.fatura_kesildi_aylar || {}
+    const yeniDurum = !mevcut[ay]
+    const yeniAylar = { ...mevcut, [ay]: yeniDurum }
+    await sb.from('firmalar').update({ fatura_kesildi_aylar: yeniAylar }).eq('id', firma.id)
+    setFirmalar(prev => prev.map(f => f.id === firma.id ? { ...f, fatura_kesildi_aylar: yeniAylar } : f))
   }
 
 
@@ -86,7 +81,7 @@ export default function Firmalar() {
       gorevli_dsp:'', dsp_id:'', bhl_atama:'', bhl_atama_durum:'yok', atama_aciklama:'', dr_sure:'', uzman_sure:'',
       ziyaret_periyodu:'', gorevli_ih_giden:'', gorevli_igu_giden:'', ih_periyot:'',
       kisi_basi_ucret:'', kisi_basi_ucret_yeni:'', paket_2808:'', paket_3000:'', paket_3434:'',
-      aktif: true, pasif_neden: ''
+      aktif: true, pasif_neden: '', fatura_kesildi_aylar: {}
     }
   }
 
@@ -122,9 +117,6 @@ export default function Firmalar() {
     const { data, error } = await q
     if (error) { setHata('Yüklenemedi'); setYukleniyor(false); return }
     setFirmalar(data || [])
-    const buYil = new Date().getFullYear()
-    const { data: dt } = await sb.from('donem_takip').select('firma_id, ay, calisan_sayisi, fatura_tutari, fatura_kesildi').gte('ay', buYil+'-01').lte('ay', buYil+'-12')
-    setDonemTakip(dt || [])
     setYukleniyor(false)
   }
 
@@ -251,6 +243,7 @@ export default function Firmalar() {
       kisi_basi_ucret_yeni: f.kisi_basi_ucret_yeni?.toString()||'',
       aktif: f.aktif !== false,
       pasif_neden: f.pasif_neden||'',
+      fatura_kesildi_aylar: f.fatura_kesildi_aylar || {},
       paket_2808: f.paket_2808?.toString()||'', paket_3000: f.paket_3000?.toString()||'', paket_3434: f.paket_3434?.toString()||''
     })
   }
@@ -375,8 +368,7 @@ export default function Firmalar() {
                       </td>
                       <td><span className="badge" style={{ background:`${TEHLIKE_RENK[f.tehlike_sinifi]}22`, color:TEHLIKE_RENK[f.tehlike_sinifi], fontSize:11 }}>{f.tehlike_sinifi}</span></td>
                       {[f.ocak_kisi, f.subat_kisi, f.mart_kisi, f.nisan_kisi, f.mayis_kisi, f.haziran_kisi].map((v, i) => {
-                        const donem = getDonem(f.id, i)
-                        const kesildi = donem?.fatura_kesildi || false
+                        const kesildi = getFaturaKesildi(f, i)
                         return <td key={i} style={{ textAlign:'center', fontSize:12, padding:'4px 6px' }}>
                           <div style={{ color: v !== null ? 'var(--text)' : 'var(--text-faint)' }}>{v ?? '—'}</div>
                           {v !== null && (
@@ -418,8 +410,7 @@ export default function Firmalar() {
                     const toplamTl = sonAy * birimFiyat
                     return (<>
                       {[f.ocak_kisi, f.subat_kisi, f.mart_kisi, f.nisan_kisi, f.mayis_kisi, f.haziran_kisi].map((v, i) => {
-                        const donem = getDonem(f.id, i)
-                        const kesildi = donem?.fatura_kesildi || false
+                        const kesildi = getFaturaKesildi(f, i)
                         return <td key={i} style={{ textAlign:'center', fontSize:12, padding:'4px 6px' }}>
                           <div style={{ color: v !== null ? 'var(--text)' : 'var(--text-faint)' }}>{v ?? '—'}</div>
                           {v !== null && (
