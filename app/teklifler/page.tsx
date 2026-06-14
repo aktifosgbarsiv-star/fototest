@@ -71,8 +71,13 @@ export default function Teklifler() {
 
   function exportCSV() {
     csvIndir(filtreli.map(t => ({
-      'Firma': t.firma_unvan||'', 'Yetkili': t.yetkili||'', 'Telefon': t.telefon||'',
-      'Tür': t.teklif_turu||t.tur||'', 'Durum': t.surec_durumu||'', 'İletim': t.iletim_turu||'',
+      'Müşteri': t.musteri_unvan||'', 'Yetkili': t.yetkili||'', 'Telefon': t.telefon||'',
+      'Adres': t.adres||'', 'Firma Detay': t.firma_detay||'',
+      'Tehlike': t.tehlike_sinifi||'', 'Çalışan': t.calisan_sayisi||'',
+      'Tür': t.tur||'', 'Teklif Tarihi': t.teklif_tarihi||'',
+      'Teklif İçeriği': t.teklif_icerigi||'',
+      'Durum': t.surec_durumu||'', 'Süreç Notu': t.surec_notu||'',
+      'İletim Türü': t.iletim_turu||'', 'İletişim Notu': t.iletisim_notu||'',
     })), 'teklifler')
   }
   const filtreli = teklifler // server-side

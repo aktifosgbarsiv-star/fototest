@@ -27,6 +27,7 @@ export default function Tedarikciler() {
     csvIndir(filtreli.map(t => ({
       'Ünvan': t.unvan||'', 'Yetkili': t.yetkili||'', 'Telefon': t.telefon||'',
       'E-posta': t.email||'', 'Kategori': t.kategori||'',
+      'Adres': t.adres||'', 'Notlar': t.notlar||'',
     })), 'tedarikciler')
   }
   const sb = createClient()

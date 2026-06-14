@@ -120,8 +120,10 @@ export default function Tahsilat() {
   function exportCSV() {
     csvIndir(filtreli.map(c => ({
       'Ünvan': c.unvan||'', 'Müşteri No': c.musteri_no||'', 'Telefon': c.telefon||'',
+      'Sınıf': c.sinif||'', 'Müşteri Vadesi (gün)': c.musteri_vadesi||'',
       'Açık Bakiye': c.acik_bakiye||0, 'Vadesi Geçen': c.vadesi_gecen_tutar||0,
-      'Geçen Gün': c.gecen_gun_sayisi||0, 'Son Tahsilat': c.son_tahsilat||'',
+      'Geçen Gün': c.gecen_gun_sayisi||0, 'Çek/Senet': c.cek_senet_bakiyesi||0,
+      'Son Tahsilat': c.son_tahsilat||'',
     })), 'cariler')
   }
   const tl = (n:number) => new Intl.NumberFormat('tr-TR', { minimumFractionDigits:2, maximumFractionDigits:2 }).format(n) + ' ₺'

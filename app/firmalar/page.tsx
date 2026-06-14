@@ -196,11 +196,25 @@ export default function Firmalar() {
 
   function exportCSV() {
     csvIndir(filtreli.map(f => ({
-      'Ünvan': f.unvan||'', 'Katip Ünvan': f.isg_katip_unvan||'', 'SGK Sicil': f.sgk_sicil||'',
-      'Tehlike Sınıfı': f.tehlike_sinifi||'', 'Çalışan': f.calisan_sayisi||'',
-      'Bölge': f.bolge||'', 'Kişi Başı': f.kisi_basi_ucret||'',
-      'İGU': f.gorevli_igu||'', 'İH': f.gorevli_ih||'',
-      'Fatura': f.fatura ? 'Evet' : 'Hayır',
+      'Ünvan': f.unvan||'', 'İSG Katip Ünvan': f.isg_katip_unvan||'', 'SGK Sicil': f.sgk_sicil||'',
+      'Tehlike Sınıfı': f.tehlike_sinifi||'', 'Bölge': f.bolge||'', 'Faaliyet': f.faaliyet||'',
+      'Çalışan Sayısı': f.calisan_sayisi||'', 'Plan Sayı': f.plan_sayi||'',
+      'Yetkili': f.yetkili||'', 'Telefon': f.telefon||'', 'Telefon2': f.telefon2||'', 'Email': f.email||'',
+      'Adres': f.adres||'',
+      'İGU': f.gorevli_igu||'', 'İGU Atama': f.igu_atama_tarihi||'',
+      'İH': f.gorevli_ih||'', 'İH Atama': f.ih_atama_tarihi||'',
+      'DSP': f.gorevli_dsp||'', 'BHL Atama': f.bhl_atama||'',
+      'Uzman Süre (dk)': f.uzman_sure||'', 'Dr Süre (dk)': f.dr_sure||'',
+      'Uzman Periyot': f.ziyaret_periyodu||'', 'İH Periyot': f.ih_periyot||'',
+      'Kişi Başı': f.kisi_basi_ucret||'', 'Kişi Başı 26': f.kisi_basi_ucret_yeni||'',
+      'Paket 2808': f.paket_2808||'', 'Paket 3000': f.paket_3000||'', 'Paket 3434': f.paket_3434||'',
+      'Fatura': f.fatura ? 'Evet' : 'Hayır', 'Fatura Açıklama': f.fatura_aciklama||'',
+      'Klasör': f.klasor||'', 'Cari Sözleşme': f.cari_sozlesme ? 'Evet' : 'Hayır',
+      'Durum': f.durum||'Aktif',
+      'Ocak': f.ocak_kisi??'', 'Şubat': f.subat_kisi??'', 'Mart': f.mart_kisi??'',
+      'Nisan': f.nisan_kisi??'', 'Mayıs': f.mayis_kisi??'', 'Haziran': f.haziran_kisi??'',
+      'Fark': f.aylik_fark??'',
+      'Fiyat Verildi': f.fiyat_verildi||'', 'Fiyat Onay': f.fiyat_onay||'',
     })), 'firmalar')
   }
 

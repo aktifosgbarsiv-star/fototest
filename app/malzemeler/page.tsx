@@ -95,7 +95,8 @@ export default function Malzemeler() {
     csvIndir(filtreli.map(m => ({
       'Ad': m.ad||'', 'Kategori': m.kategori||'', 'Birim': m.birim||'',
       'Stok': m.stok||0, 'Kritik Stok': m.kritik_stok||0,
-      'Alış': m.alis_fiyat||0, 'Satış': m.satis_fiyat||0, 'Tedarikçi': m.tedarikci||'',
+      'Alış Fiyatı': m.alis_fiyat||0, 'Satış Fiyatı': m.satis_fiyat||0,
+      'Tedarikçi': m.tedarikci||'', 'Açıklama': m.aciklama||'',
     })), 'malzemeler')
   }
   const kritikler = malzemeler.filter(m => m.stok <= m.kritik_stok && m.kritik_stok > 0)

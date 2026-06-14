@@ -2,7 +2,8 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Plus, X, Check, Trash2, ChevronLeft, ChevronRight, ClipboardList, CalendarDays, Search, Grid3X3 } from 'lucide-react'
+import { Plus, X, Check, Trash2, ChevronLeft, ChevronRight, ClipboardList, CalendarDays, Search, Grid3X3, Download } from 'lucide-react'
+import { csvIndir } from '@/lib/csvExport'
 
 const DURUM_RENK: any = { 'Planlandı':'var(--blue)', 'Tamamlandı':'var(--green)', 'Bekliyor':'var(--amber)', 'İptal':'var(--red)' }
 const DURUMLAR = ['Planlandı','Bekliyor','Tamamlandı','İptal']
@@ -149,6 +150,15 @@ export default function Koordinasyon() {
 
   const rol = mevcutPersonel?.rol || 'operasyon'
   const yazabilir = rol !== 'saha'
+
+  function exportCSV() {
+    csvIndir(filtreliGorevler.map(g => ({
+      'Tarih': g.tarih||'', 'Konu': g.konu||'', 'Görev Türü': g.gorev_turu||'',
+      'Karar/Açıklama': g.karar||'', 'Durum': g.durum||'',
+      'Yetkili/Sorumlu': g.yetkili_sorumlu||g.uzman||'',
+      'Firma': g.firma_adi||'', 'Notlar': g.aciklama||'',
+    })), 'koordinasyon')
+  }
   const istatistik = {
     toplam: gorevler.length,
     bekliyor: gorevler.filter(g => g.durum === 'Bekliyor').length,
@@ -185,6 +195,9 @@ export default function Koordinasyon() {
               <Plus size={16}/> Görev Ekle
             </button>
           )}
+          <button onClick={exportCSV} style={{ padding:'8px 12px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', cursor:'pointer', color:'var(--text-dim)', fontSize:13, display:'flex', alignItems:'center', gap:5 }}>
+            <Download size={14}/> CSV
+          </button>
         </div>
       </div>
 

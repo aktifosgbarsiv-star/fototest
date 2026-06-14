@@ -108,7 +108,10 @@ export default function Personeller() {
   const pasifler = aramaFiltresiz.filter(p => !p.aktif)
   function exportCSV() {
     csvIndir(hepsiFiltresiz.map(p => ({
-      'Ad Soyad': p.ad_soyad||'', 'E-posta': p.email||'', 'Rol': p.rol||'', 'Aktif': p.aktif ? 'Evet' : 'Hayır',
+      'Ad Soyad': p.ad_soyad||'', 'Rol': p.rol||'', 'Aktif': p.aktif ? 'Evet' : 'Hayır',
+      'Telefon': p.telefon||'', 'TC': p.tc||'', 'Kase No': p.kase_no||'',
+      'Sertifika Türü': p.sertifika_turu||'', 'Sertifika No': p.sertifika_no||'',
+      'Katip Toplam (dk)': p.katip_toplam_dk||'', 'Katip Kullanılan (dk)': p.katip_kullanilan_dk||'',
     })), 'personeller')
   }
 

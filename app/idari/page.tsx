@@ -25,8 +25,8 @@ export default function Idari() {
 
   function exportCSV() {
     csvIndir(filtreli.map(i => ({
-      'Konu': i.baslik||'', 'Kategori': i.kategori||'', 'Durum': i.durum||'',
-      'Son Tarih': i.son_tarih||'', 'Açıklama': i.detay||'',
+      'Başlık': i.baslik||'', 'Kategori': i.kategori||'', 'Durum': i.durum||'',
+      'Son Tarih': i.son_tarih||'', 'Sorumlu': i.sorumlu||'', 'Detay': i.detay||'',
     })), 'idari_isler')
   }
   const sb = createClient()

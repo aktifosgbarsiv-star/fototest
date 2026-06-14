@@ -2,7 +2,8 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Search, X, ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
+import { Search, X, ChevronLeft, ChevronRight, MapPin, Download } from 'lucide-react'
+import { csvIndir } from '@/lib/csvExport'
 
 const AYLAR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
 const AYLAR_FULL = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']
@@ -138,6 +139,25 @@ export default function Ziyaretler() {
   const rol = mevcutPersonel?.rol || 'operasyon'
   const yazabilir = !['saha'].includes(rol)
 
+  function exportCSV() {
+    const rows: any[] = []
+    firmalar.forEach(f => {
+      for (let ay = 0; ay < 12; ay++) {
+        const ayKey = `${yil}-${String(ay+1).padStart(2,'0')}`
+        const z = (f.aylik_ziyaretler||{})[ayKey]
+        if (z) {
+          rows.push({
+            'Firma': f.unvan||'', 'Tehlike': f.tehlike_sinifi||'', 'İH Periyot': f.ih_periyot||'',
+            'Yıl': yil, 'Ay': ay+1,
+            'Ziyaret Eden': z.ziyaret_eden||'', 'Tur': z.tur||'',
+            'Fatura': z.fatura ? 'Evet' : 'Hayır', 'Notlar': z.notlar||'',
+          })
+        }
+      }
+    })
+    csvIndir(rows, `ziyaretler_${yil}`)
+  }
+
   const istatistik = {
     toplam: firmalar.length,
     buAyGidilen: firmalar.filter(f => !!(f.aylik_ziyaretler || {})[`${yil}-${String(buAy+1).padStart(2,'0')}`]).length,
@@ -158,6 +178,9 @@ export default function Ziyaretler() {
           <button onClick={() => setYil(y => y-1)} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: 'var(--text)' }}><ChevronLeft size={15}/></button>
           <span style={{ fontWeight: 700, fontSize: 20, minWidth: 55, textAlign: 'center' }}>{yil}</span>
           <button onClick={() => setYil(y => y+1)} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', color: 'var(--text)' }}><ChevronRight size={15}/></button>
+          <button onClick={exportCSV} style={{ padding:'7px 12px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', cursor:'pointer', color:'var(--text-dim)', fontSize:13, display:'flex', alignItems:'center', gap:5 }}>
+            <Download size={14}/> CSV
+          </button>
         </div>
       </div>
 

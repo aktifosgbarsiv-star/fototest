@@ -135,7 +135,16 @@ export default function Saglik() {
     const { data } = await q
     csvIndir((data || []).map((k: any) => ({
       'Tarih': k.tarih || '', 'Ad Soyad': k.ad_soyad || '', 'Doğum Tarihi': k.dogum_tarihi || '',
-      'Telefon': k.telefon || '', 'Firma': k.firma || '', 'Ücret': k.ucret || 0, 'Ödeme': k.odeme_sekli || '',
+      'Telefon': k.telefon || '', 'Firma': k.firma || '',
+      'Ücret': k.ucret || 0, 'Ödeme': k.odeme_sekli || '',
+      'EK2': k.tetkikler?.EK2 ? 'Evet' : '', 'AKC': k.tetkikler?.AKC ? 'Evet' : '',
+      'ODİO': k.tetkikler?.['ODİO'] ? 'Evet' : '', 'SFT': k.tetkikler?.SFT ? 'Evet' : '',
+      'EKG': k.tetkikler?.EKG ? 'Evet' : '', 'CBC': k.tetkikler?.CBC ? 'Evet' : '',
+      'AST': k.tetkikler?.AST ? 'Evet' : '', 'ALT': k.tetkikler?.ALT ? 'Evet' : '',
+      'Gaita': k.gaita ? 'Evet' : '', 'TİT': k.tit ? 'Evet' : '',
+      'HBsAg': k.hbsag ? 'Evet' : '', 'Anti-HBs': k.antihbs ? 'Evet' : '',
+      'Göz': k.goz ? 'Evet' : '', 'İSG Eğitim': k.isg_egitim ? 'Evet' : '',
+      'PR No': k.pr_no || '', 'Açıklama': k.aciklama || '',
     })), 'saglik_tarama')
   }
 

@@ -133,6 +133,7 @@ export default function Taramalar() {
   function exportCSV() {
     csvIndir(filtreli.map(t => ({
       'Tarih': t.tarih || t.planlanan_tarih || '',
+      'Gerçekleşen': t.gerceklesen_tarih || '',
       'Ad Soyad': t.ad_soyad || '',
       'Doğum Tarihi': t.dogum_tarihi || '',
       'Telefon': t.telefon || '',
@@ -140,7 +141,13 @@ export default function Taramalar() {
       'Ücret': t.tutar || 0,
       'Ödeme': t.odeme_turu || '',
       'Tetkikler': t.tetkikler || '',
+      'Ekip': t.ekip || '',
+      'Kişi Sayısı': t.kisi_sayisi || '',
       'Aşama': t.asama || '',
+      'Fatura No': t.fatura_no || '',
+      'Rapor Teslim': t.rapor_teslim_tarihi || '',
+      'Tahsilat Tarihi': t.tahsilat_tarihi || '',
+      'Notlar': t.notlar || '',
     })), 'saglik-raporu')
   }
 
