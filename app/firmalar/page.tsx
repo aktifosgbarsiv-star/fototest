@@ -256,15 +256,65 @@ export default function Firmalar() {
         <div style={{ overflowX:'auto' }}>
           <table>
             <thead>
-              <tr><th>Ünvan</th><th>Bölge</th><th>Tehlike</th><th>Çalışan</th><th>İGU</th><th>İH</th><th>DSP</th><th>Kişi Başı</th><th>Fatura</th><th>Periyot</th>
-                {(kulRol === 'muhasebe' || kulRol === 'yonetici') && (<><th style={{ color:'var(--accent)', fontSize:11 }}>Oca</th><th style={{ color:'var(--accent)', fontSize:11 }}>Şub</th><th style={{ color:'var(--accent)', fontSize:11 }}>Mar</th><th style={{ color:'var(--accent)', fontSize:11 }}>Nis</th><th style={{ color:'var(--accent)', fontSize:11 }}>May</th><th style={{ color:'var(--accent)', fontSize:11 }}>Haz</th><th style={{ color:'var(--amber)', fontSize:11 }}>Fark</th><th style={{ color:'var(--green)', fontSize:11 }}>K.Başı ₺</th></>)}
-              <th></th></tr>
+              {kulRol === 'muhasebe' ? (
+                <tr>
+                  <th>İSG Katip Ünvan</th>
+                  <th>Sınıfı</th>
+                  <th style={{ color:'var(--accent)', fontSize:11 }}>Oca</th>
+                  <th style={{ color:'var(--accent)', fontSize:11 }}>Şub</th>
+                  <th style={{ color:'var(--accent)', fontSize:11 }}>Mar</th>
+                  <th style={{ color:'var(--accent)', fontSize:11 }}>Nis</th>
+                  <th style={{ color:'var(--accent)', fontSize:11 }}>May</th>
+                  <th style={{ color:'var(--accent)', fontSize:11 }}>Haz</th>
+                  <th style={{ color:'var(--amber)', fontSize:11 }}>Fark</th>
+                  <th>Fatura</th>
+                  <th>Klasör</th>
+                  <th>SGK Sicil No</th>
+                  <th style={{ color:'var(--text-dim)', fontSize:11 }}>Kişi Başı</th>
+                  <th style={{ color:'var(--text-dim)', fontSize:11 }}>K.Başı 26</th>
+                  <th style={{ color:'var(--green)', fontSize:11 }}>Toplam ₺</th>
+                  <th></th>
+                </tr>
+              ) : (
+                <tr>
+                  <th>Ünvan</th><th>Bölge</th><th>Tehlike</th><th>Çalışan</th><th>İGU</th><th>İH</th><th>DSP</th><th>Kişi Başı</th><th>Fatura</th><th>Periyot</th>
+                  {kulRol === 'yonetici' && (<><th style={{ color:'var(--accent)', fontSize:11 }}>Oca</th><th style={{ color:'var(--accent)', fontSize:11 }}>Şub</th><th style={{ color:'var(--accent)', fontSize:11 }}>Mar</th><th style={{ color:'var(--accent)', fontSize:11 }}>Nis</th><th style={{ color:'var(--accent)', fontSize:11 }}>May</th><th style={{ color:'var(--accent)', fontSize:11 }}>Haz</th><th style={{ color:'var(--amber)', fontSize:11 }}>Fark</th><th style={{ color:'var(--green)', fontSize:11 }}>K.Başı ₺</th></>)}
+                  <th></th>
+                </tr>
+              )}
             </thead>
             <tbody>
               {yukleniyor ? <tr><td colSpan={11} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Yükleniyor...</td></tr>
                : filtreli.length === 0 ? <tr><td colSpan={11} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Firma yok</td></tr>
                : filtreli.map(f => (
                 <tr key={f.id} style={{ cursor:'pointer' }} onClick={()=>setDetay(f)}>
+                  {kulRol === 'muhasebe' ? (() => {
+                    const fark = f.aylik_fark ?? null
+                    const sonAy = [f.haziran_kisi, f.mayis_kisi, f.nisan_kisi, f.mart_kisi, f.subat_kisi, f.ocak_kisi].find(v => v !== null && v !== undefined) ?? 0
+                    const birimFiyat = Number(f.kisi_basi_ucret_yeni) || Number(f.kisi_basi_ucret) || 0
+                    const toplamTl = sonAy * birimFiyat
+                    return (<>
+                      <td style={{ fontWeight:500 }}>
+                        <div>{f.isg_katip_unvan || f.unvan}</div>
+                        {f.isg_katip_unvan && f.isg_katip_unvan !== f.unvan && <div style={{ fontSize:10, color:'var(--text-faint)' }}>{f.unvan}</div>}
+                      </td>
+                      <td><span className="badge" style={{ background:`${TEHLIKE_RENK[f.tehlike_sinifi]}22`, color:TEHLIKE_RENK[f.tehlike_sinifi], fontSize:11 }}>{f.tehlike_sinifi}</span></td>
+                      {[f.ocak_kisi, f.subat_kisi, f.mart_kisi, f.nisan_kisi, f.mayis_kisi, f.haziran_kisi].map((v, i) => (
+                        <td key={i} style={{ textAlign:'center', fontSize:12, color: v !== null ? 'var(--text)' : 'var(--text-faint)' }}>{v ?? '—'}</td>
+                      ))}
+                      <td style={{ textAlign:'center', fontSize:12, fontWeight:600, color: fark !== null && fark > 0 ? 'var(--green)' : fark !== null && fark < 0 ? 'var(--red)' : 'var(--text-faint)' }}>
+                        {fark !== null && fark !== 0 ? (fark > 0 ? '+' : '') + fark : '—'}
+                      </td>
+                      <td style={{ textAlign:'center' }}>{f.fatura ? <span style={{ color:'var(--green)', fontWeight:600 }}>EVET</span> : <span style={{ color:'var(--text-faint)', fontSize:12 }}>—</span>}</td>
+                      <td style={{ fontSize:12, color:'var(--text-dim)' }}>{f.klasor||'—'}</td>
+                      <td style={{ fontSize:11, fontFamily:'monospace', color:'var(--text-faint)' }}>{f.sgk_sicil||'—'}</td>
+                      <td style={{ fontSize:12, color:'var(--text-dim)', textAlign:'right' }}>{f.kisi_basi_ucret ? new Intl.NumberFormat('tr-TR').format(Number(f.kisi_basi_ucret)) : '—'}</td>
+                      <td style={{ fontSize:12, color:'var(--text-dim)', textAlign:'right' }}>{f.kisi_basi_ucret_yeni ? new Intl.NumberFormat('tr-TR').format(Number(f.kisi_basi_ucret_yeni)) : '—'}</td>
+                      <td style={{ fontSize:12, fontWeight:700, whiteSpace:'nowrap', color:'var(--red)', textAlign:'right' }}>
+                        {toplamTl > 0 ? new Intl.NumberFormat('tr-TR').format(toplamTl) + ' ₺' : '—'}
+                      </td>
+                    </>)
+                  })() : (<>
                   <td style={{ fontWeight:500 }}>
                     {f.unvan}
                     {f.isg_katip_unvan && f.isg_katip_unvan !== f.unvan && <div style={{ fontSize:11, color:'var(--text-faint)' }}>{f.isg_katip_unvan}</div>}
@@ -279,8 +329,7 @@ export default function Firmalar() {
                   <td style={{ fontSize:13, color:'var(--text-dim)' }}>{tl(Number(f.kisi_basi_ucret)||0)}</td>
                   <td>{f.fatura ? <span style={{ color:'var(--green)', fontSize:12 }}>✓</span> : <span style={{ color:'var(--text-faint)', fontSize:12 }}>—</span>}</td>
                   <td style={{ color:'var(--text-dim)', fontSize:13 }}>{f.ziyaret_periyodu||'—'}</td>
-                  {(kulRol === 'muhasebe' || kulRol === 'yonetici') && (() => {
-                    const aylar = [f.ocak_kisi, f.subat_kisi, f.mart_kisi, f.nisan_kisi, f.mayis_kisi, f.haziran_kisi]
+                  {kulRol === 'yonetici' && (() => {
                     const fark = f.aylik_fark ?? null
                     const sonAy = [f.haziran_kisi, f.mayis_kisi, f.nisan_kisi, f.mart_kisi, f.subat_kisi, f.ocak_kisi].find(v => v !== null && v !== undefined) ?? 0
                     const birimFiyat = Number(f.kisi_basi_ucret_yeni) || Number(f.kisi_basi_ucret) || 0
@@ -297,6 +346,7 @@ export default function Firmalar() {
                       </td>
                     </>)
                   })()}
+                  </>)}
                   <td onClick={e=>e.stopPropagation()}>
                     <div style={{ display:'flex', gap:4 }}>
                       <button onClick={()=>duzenleAc(f)} style={{ background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer', padding:4 }}><Pencil size={14}/></button>
