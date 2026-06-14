@@ -33,7 +33,7 @@ export default function Saglik() {
   const debounceRef = useRef<any>(null)
 
   function bosForm() {
-    return { tarih: new Date().toISOString().slice(0, 10), ad_soyad: '', dogum_tarihi: '', telefon: '', firma: '', firma_id: '', hekim_id: '', ucret: '', odeme_sekli: 'Peşin', tetkikler: {} }
+    return { tarih: new Date().toISOString().slice(0, 10), ad_soyad: '', dogum_tarihi: '', telefon: '', firma: '', firma_id: '', hekim_id: '', ucret: '', odeme_sekli: 'Peşin', tetkikler: {}, pr_no: '' }
   }
 
   const sb = createClient()
@@ -111,6 +111,7 @@ export default function Saglik() {
       dogum_tarihi: form.dogum_tarihi || null,
       firma_id: form.firma_id || null,
       hekim_id: form.hekim_id || null,
+      pr_no: form.pr_no ? Number(form.pr_no) : null,
       sube
     })
     if (error) { setHata(error.message); return }
@@ -354,6 +355,7 @@ export default function Saglik() {
             <div className="modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div><label style={lbl}>Tarih</label><input type="date" value={form.tarih} onChange={e => setForm({ ...form, tarih: e.target.value })} /></div>
               <div><label style={lbl}>Ad Soyad *</label><input value={form.ad_soyad} onChange={e => setForm({ ...form, ad_soyad: e.target.value })} placeholder="Hasta adı" /></div>
+              <div><label style={lbl}>Protokol No</label><input type="number" placeholder="PR No" value={form.pr_no} onChange={e => setForm({ ...form, pr_no: e.target.value })} /></div>
               <div><label style={lbl}>Doğum Tarihi</label><input type="date" value={form.dogum_tarihi} onChange={e => setForm({ ...form, dogum_tarihi: e.target.value })} /></div>
               <div><label style={lbl}>Telefon</label><input value={form.telefon} onChange={e => setForm({ ...form, telefon: e.target.value })} placeholder="05..." /></div>
               <div style={{ gridColumn: '1/3' }}>
