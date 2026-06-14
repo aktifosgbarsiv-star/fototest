@@ -3,7 +3,8 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { csvIndir } from '@/lib/csvExport'
-import { Plus, Search, X, Building2, Trash2, Pencil } from 'lucide-react'
+import { Plus, Search, X, Building2, Trash2, Pencil, Upload } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 const TEHLIKE_RENK: any = { 'Az Tehlikeli':'var(--green)', 'Tehlikeli':'var(--amber)', 'Çok Tehlikeli':'var(--red)' }
 const TEHLIKE = ['Az Tehlikeli','Tehlikeli','Çok Tehlikeli']
@@ -28,6 +29,11 @@ export default function Firmalar() {
   const [form, setForm] = useState<any>(bosForm())
   const [kulRol, setKulRol] = useState<string>('operasyon')
   const [pasifModal, setPasifModal] = useState<any>(null) // { firma }
+  const [katipExcelModal, setKatipExcelModal] = useState(false)
+  const [katipExcelSonuc, setKatipExcelSonuc] = useState<any[]>([])
+  const [katipExcelAy, setKatipExcelAy] = useState('')
+  const [katipExcelYukleniyor, setKatipExcelYukleniyor] = useState(false)
+  const katipFileRef = useRef<any>(null)
   const [pasifNeden, setPasifNeden] = useState('')
   const [aktifFiltre, setAktifFiltre] = useState<'aktif'|'pasif'|'hepsi'>('aktif')
 
@@ -159,6 +165,60 @@ export default function Firmalar() {
     setForm(bosForm()); yukle()
   }
 
+
+
+  async function katipExcelOku(e: any) {
+    const file = e.target.files?.[0]
+    if (!file || !katipExcelAy) return
+    setKatipExcelYukleniyor(true)
+    const buf = await file.arrayBuffer()
+    const wb = XLSX.read(buf, { type: 'array' })
+    const ws = wb.Sheets[wb.SheetNames[0]]
+    const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' })
+
+    // Katip export kolon isimlerini normalize et - SGK sicil ve çalışan sayısı bul
+    const sonuclar: any[] = []
+    for (const row of rows) {
+      const keys = Object.keys(row)
+      // SGK sicil no - çeşitli kolon adlarını dene
+      const sicilKey = keys.find(k => /sgk|sicil|işyeri.*no|isyeri.*no/i.test(k))
+      const kisiKey = keys.find(k => /çalışan|calisan|kişi|kisi|personel|sayı|sayi/i.test(k) && !/kod|no|id/i.test(k))
+      if (!sicilKey || !kisiKey) continue
+      const sicil = String(row[sicilKey]).trim()
+      const kisi = Number(row[kisiKey])
+      if (!sicil || isNaN(kisi) || kisi <= 0) continue
+
+      // firmalardan eşleştir
+      const firma = firmalar.find(f => f.sgk_sicil && f.sgk_sicil.trim() === sicil)
+      if (firma) {
+        const AY_KISILER = ['ocak_kisi','subat_kisi','mart_kisi','nisan_kisi','mayis_kisi','haziran_kisi','temmuz_kisi','agustos_kisi','eylul_kisi','ekim_kisi','kasim_kisi','aralik_kisi']
+        const ayIdx = parseInt(katipExcelAy.split('-')[1]) - 1
+        const mevcutKisi = Number(firma[AY_KISILER[ayIdx]]) || 0
+        sonuclar.push({ firma, sicil, katipKisi: kisi, mevcutKisi, fark: kisi - mevcutKisi, ayKolonu: AY_KISILER[ayIdx] })
+      } else {
+        sonuclar.push({ firma: null, sicil, katipKisi: kisi, mevcutKisi: null, fark: null, ayKolonu: null })
+      }
+    }
+    setKatipExcelSonuc(sonuclar)
+    setKatipExcelYukleniyor(false)
+  }
+
+  async function katipExcelKaydet() {
+    const eslesenler = katipExcelSonuc.filter(r => r.firma)
+    const buYilNum = new Date().getFullYear()
+    const ayIdx = parseInt(katipExcelAy.split('-')[1]) - 1
+    for (const r of eslesenler) {
+      const payload: any = { [r.ayKolonu]: r.katipKisi }
+      // önceki ay varsa fark hesapla
+      const AY_KISILER = ['ocak_kisi','subat_kisi','mart_kisi','nisan_kisi','mayis_kisi','haziran_kisi','temmuz_kisi','agustos_kisi','eylul_kisi','ekim_kisi','kasim_kisi','aralik_kisi']
+      const oncekiAyKisi = ayIdx > 0 ? Number(r.firma[AY_KISILER[ayIdx-1]]) || null : null
+      if (oncekiAyKisi !== null) payload.aylik_fark = r.katipKisi - oncekiAyKisi
+      await sb.from('firmalar').update(payload).eq('id', r.firma.id)
+    }
+    setKatipExcelModal(false)
+    setKatipExcelSonuc([])
+    yukle()
+  }
 
   async function pasifYap(firma: any, neden: string) {
     await sb.from('firmalar').update({ aktif: false, pasif_neden: neden }).eq('id', firma.id)
@@ -297,6 +357,9 @@ export default function Firmalar() {
               {f==='aktif'?'Aktif':f==='pasif'?'Pasif':'Hepsi'}
             </button>
           ))}
+          <button onClick={()=>{ setKatipExcelModal(true); setKatipExcelSonuc([]); setKatipExcelAy(new Date().getFullYear()+'-'+(new Date().getMonth()+1).toString().padStart(2,'0')) }} style={{ padding:'8px 14px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', cursor:'pointer', color:'var(--text-dim)', fontSize:13, display:'flex', alignItems:'center', gap:6, fontFamily:'inherit' }}>
+            <Upload size={14}/> Katip Excel
+          </button>
           <button className="btn" onClick={()=>{ setDuzenle(null); setForm(bosForm()); setSekme('temel'); setModal(true) }}><Plus size={18}/> Yeni Firma</button>
         </div>
       </div>
@@ -1056,6 +1119,75 @@ export default function Firmalar() {
               <button className="btn-ghost btn" style={{ flex:1, justifyContent:'center' }} onClick={()=>{ setModal(false); setDuzenle(null) }}>İptal</button>
               <button className="btn" style={{ flex:1, justifyContent:'center' }} onClick={kaydet}>{duzenle?'Güncelle':'Kaydet'}</button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Katip Excel Yükleme Modalı */}
+      {katipExcelModal && (
+        <div className="modal-overlay" onClick={()=>setKatipExcelModal(false)}>
+          <div className="modal" style={{ maxWidth:680, maxHeight:'85vh', overflow:'auto' }} onClick={e=>e.stopPropagation()}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+              <h3 style={{ fontWeight:700, fontSize:16 }}>Katip Excel Yükle</h3>
+              <button onClick={()=>setKatipExcelModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-dim)' }}><X size={20}/></button>
+            </div>
+            <p style={{ fontSize:13, color:'var(--text-dim)', marginBottom:16 }}>Katip sisteminden indirilen Excel dosyasını yükleyin. SGK sicil numarası ile firmalar eşleştirilecek, seçilen ayın çalışan sayısı güncellenecek ve fark hesaplanacak.</p>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
+              <div>
+                <label style={{ fontSize:12, color:'var(--text-dim)', display:'block', marginBottom:6 }}>Ay</label>
+                <input type="month" value={katipExcelAy} onChange={e=>setKatipExcelAy(e.target.value)} style={{ width:'100%', padding:'9px 12px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface-2)', color:'var(--text)', fontSize:13, fontFamily:'inherit' }}/>
+              </div>
+              <div>
+                <label style={{ fontSize:12, color:'var(--text-dim)', display:'block', marginBottom:6 }}>Excel Dosyası (.xlsx)</label>
+                <input ref={katipFileRef} type="file" accept=".xlsx,.xls" onChange={katipExcelOku} style={{ display:'none' }}/>
+                <button onClick={()=>katipFileRef.current?.click()} style={{ width:'100%', padding:'9px 12px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface-2)', color:'var(--text-dim)', cursor:'pointer', fontSize:13, fontFamily:'inherit', display:'flex', alignItems:'center', gap:6 }}>
+                  <Upload size={14}/> Dosya Seç
+                </button>
+              </div>
+            </div>
+
+            {katipExcelYukleniyor && <div style={{ textAlign:'center', padding:20, color:'var(--text-faint)' }}>Excel okunuyor...</div>}
+
+            {katipExcelSonuc.length > 0 && (
+              <div>
+                <div style={{ fontSize:12, color:'var(--text-dim)', marginBottom:10, fontWeight:600 }}>
+                  {katipExcelSonuc.filter(r=>r.firma).length} firma eşleşti · {katipExcelSonuc.filter(r=>!r.firma).length} eşleşmedi
+                </div>
+                <div style={{ maxHeight:320, overflow:'auto', border:'1px solid var(--border)', borderRadius:8 }}>
+                  <table style={{ width:'100%', fontSize:12, borderCollapse:'collapse' }}>
+                    <thead>
+                      <tr style={{ background:'var(--surface-2)', position:'sticky', top:0 }}>
+                        <th style={{ padding:'8px 10px', textAlign:'left' }}>Firma</th>
+                        <th style={{ padding:'8px 10px', textAlign:'left' }}>SGK Sicil</th>
+                        <th style={{ padding:'8px 10px', textAlign:'center' }}>Katip Kişi</th>
+                        <th style={{ padding:'8px 10px', textAlign:'center' }}>Sistemdeki</th>
+                        <th style={{ padding:'8px 10px', textAlign:'center' }}>Fark</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {katipExcelSonuc.map((r,i)=>(
+                        <tr key={i} style={{ borderBottom:'1px solid var(--border)', background: !r.firma ? 'rgba(239,68,68,0.05)' : r.fark !== 0 ? 'rgba(99,102,241,0.04)' : 'transparent' }}>
+                          <td style={{ padding:'8px 10px', color: r.firma ? 'var(--text)' : 'var(--red)', fontWeight:500 }}>
+                            {r.firma ? r.firma.unvan : '⚠ Eşleşmedi'}
+                          </td>
+                          <td style={{ padding:'8px 10px', fontFamily:'monospace', color:'var(--text-faint)' }}>{r.sicil}</td>
+                          <td style={{ padding:'8px 10px', textAlign:'center', fontWeight:600 }}>{r.katipKisi}</td>
+                          <td style={{ padding:'8px 10px', textAlign:'center', color:'var(--text-dim)' }}>{r.mevcutKisi ?? '—'}</td>
+                          <td style={{ padding:'8px 10px', textAlign:'center', fontWeight:700, color: r.fark > 0 ? 'var(--green)' : r.fark < 0 ? 'var(--red)' : 'var(--text-faint)' }}>
+                            {r.fark !== null ? (r.fark > 0 ? '+' : '') + r.fark : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{ display:'flex', gap:10, marginTop:16 }}>
+                  <button onClick={()=>setKatipExcelModal(false)} className="btn-ghost btn" style={{ flex:1, justifyContent:'center' }}>İptal</button>
+                  <button onClick={katipExcelKaydet} style={{ flex:2, padding:'10px', borderRadius:8, background:'var(--accent)', border:'none', color:'white', cursor:'pointer', fontWeight:700, fontSize:13, fontFamily:'inherit' }}>
+                    {katipExcelSonuc.filter(r=>r.firma).length} Firmayı Güncelle
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
