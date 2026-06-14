@@ -274,7 +274,6 @@ export default function Koordinasyon() {
                               {gosterimDurum}{g.son_tarih && !gecikti && !['Tamamlandı','İptal'].includes(g.durum) ? ` · ${new Date(g.son_tarih+'T00:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'})}` : ''}
                             </span>
                           })()}
-                          </span>
                         </td>
                         <td style={{ padding:'10px 12px' }}>
                           <div style={{ fontWeight:500 }}>{g.yetkili_sorumlu || g.uzman || '—'}</div>
@@ -358,7 +357,6 @@ export default function Koordinasyon() {
                                 {gosterimDurum}{g.son_tarih && !gecikti && !['Tamamlandı','İptal'].includes(g.durum) ? ` · ${new Date(g.son_tarih+'T00:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'})}` : ''}
                               </span>
                             })()}
-                            </span>
                           </div>
                           <div style={{ fontWeight:600, fontSize:13, marginBottom:4 }}>{g.konu || g.firma_adi || '—'}</div>
                           {g.karar && <div style={{ fontSize:12, color:'var(--text-dim)' }}>{g.karar}</div>}
