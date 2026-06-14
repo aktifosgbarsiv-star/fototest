@@ -84,7 +84,7 @@ export default function Firmalar() {
       gorevli_igu:'', igu_id:'', igu_atama_tarihi:'', igu_atama_durum:'yok',
       gorevli_ih:'', ih_id:'', ih_atama_tarihi:'', ih_atama_durum:'yok',
       gorevli_dsp:'', dsp_id:'', bhl_atama:'', bhl_atama_durum:'yok', atama_aciklama:'', dr_sure:'', uzman_sure:'',
-      ziyaret_periyodu:'', gorevli_ih_giden:'', ih_periyot:'',
+      ziyaret_periyodu:'', gorevli_ih_giden:'', gorevli_igu_giden:'', ih_periyot:'',
       kisi_basi_ucret:'', kisi_basi_ucret_yeni:'', paket_2808:'', paket_3000:'', paket_3434:'',
       aktif: true, pasif_neden: ''
     }
@@ -246,7 +246,7 @@ export default function Firmalar() {
       gorevli_dsp: f.gorevli_dsp||'', dsp_id: f.dsp_id||'', bhl_atama: f.bhl_atama||'', bhl_atama_durum: f.bhl_atama_durum||'yok',
       atama_aciklama: f.atama_aciklama||'', dr_sure: f.dr_sure?.toString()||'',
       uzman_sure: f.uzman_sure?.toString()||'', ziyaret_periyodu: f.ziyaret_periyodu||'',
-      gorevli_ih_giden: f.gorevli_ih_giden||'', ih_periyot: f.ih_periyot||'',
+      gorevli_ih_giden: f.gorevli_ih_giden||'', gorevli_igu_giden: f.gorevli_igu_giden||'', ih_periyot: f.ih_periyot||'',
       kisi_basi_ucret: f.kisi_basi_ucret?.toString()||'',
       kisi_basi_ucret_yeni: f.kisi_basi_ucret_yeni?.toString()||'',
       aktif: f.aktif !== false,
@@ -630,6 +630,18 @@ export default function Firmalar() {
                 </div>
                 <div><label style={lbl}>Uzman Süre (dk)</label><input type="number" value={form.uzman_sure} onChange={e=>setForm({...form, uzman_sure:e.target.value})} /></div>
                 <div><label style={lbl}>Dr Süre (dk)</label><input type="number" value={form.dr_sure} onChange={e=>setForm({...form, dr_sure:e.target.value})} /></div>
+                <div><label style={lbl}>İGU Giden (Fiili)</label>
+                <select value={form.gorevli_igu_giden} onChange={e=>setForm({...form, gorevli_igu_giden:e.target.value})}>
+                  <option value="">Seçiniz...</option>
+                  {personeller.filter(p=>['operasyon','saha','yonetici'].includes(p.rol)).map(p=><option key={p.id} value={p.ad_soyad}>{p.ad_soyad}</option>)}
+                </select>
+              </div>
+                <div><label style={lbl}>İH Giden (Fiili)</label>
+                <select value={form.gorevli_ih_giden} onChange={e=>setForm({...form, gorevli_ih_giden:e.target.value})}>
+                  <option value="">Seçiniz...</option>
+                  {personeller.filter(p=>p.rol==='hekim'||p.rol==='yonetici').map(p=><option key={p.id} value={p.ad_soyad}>{p.ad_soyad}</option>)}
+                </select>
+              </div>
                 <div style={{ gridColumn:'1/3' }}><label style={lbl}>Atama Açıklaması</label><textarea rows={2} value={form.atama_aciklama} onChange={e=>setForm({...form, atama_aciklama:e.target.value})} /></div>
                 {duzenle && katipSozlesmeler.length > 0 && (
                   <div style={{ gridColumn:'1/3', background:'var(--surface-2)', borderRadius:10, padding:'10px 14px' }}>
@@ -659,7 +671,6 @@ export default function Firmalar() {
             {sekme === 'ziyaret' && (
               <div className="modal-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 <div><label style={lbl}>Uzman Periyot</label><input value={form.ziyaret_periyodu} onChange={e=>setForm({...form, ziyaret_periyodu:e.target.value})} placeholder="Aylık / 3 Aylık" /></div>
-                <div><label style={lbl}>İH Giden</label><input value={form.gorevli_ih_giden} onChange={e=>setForm({...form, gorevli_ih_giden:e.target.value})} /></div>
                 <div><label style={lbl}>İH Periyot</label><input value={form.ih_periyot} onChange={e=>setForm({...form, ih_periyot:e.target.value})} placeholder="Aylık / 3 Aylık" /></div>
                 {duzenle && (() => {
                   const aylar = ['01','02','03','04','05','06','07','08','09','10','11','12']
