@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [ziyaretStat, setZiyaretStat] = useState<any>({ yapilan:0, bekleyen:0 })
   const [acikGorevler, setAcikGorevler] = useState<any[]>([])
   const [saglikStat, setSaglikStat] = useState<any>({ bugun:0, hafta:0, ay:0, yil:0, ciroBugun:0, ciroAy:0 })
+  const [saglikSube, setSaglikSube] = useState<any>({ merkez:0, sandikli:0 })
   const [bekleyenTeklif, setBekleyenTeklif] = useState<number>(0)
   const [ciroData, setCiroData] = useState<any[]>([])
   const [vadeData, setVadeData] = useState<any[]>([])
@@ -113,6 +114,12 @@ export default function Dashboard() {
       if (izin.includes('saglikRaporu')) {
         const bugunStr = new Date().toISOString().slice(0,10)
         const haftaBas = (() => { const d = new Date(); d.setDate(d.getDate()-d.getDay()+1); return d.toISOString().slice(0,10) })()
+        // Bu ay merkez ve sandikli sayısı
+        const [{ count: merkezCount }, { count: sandikliCount }] = await Promise.all([
+          sb.from('hasta_kayitlari').select('id', { count:'exact', head:true }).eq('sube','merkez').gte('tarih', ayBas).lte('tarih', ayBit),
+          sb.from('hasta_kayitlari').select('id', { count:'exact', head:true }).eq('sube','sandikli').gte('tarih', ayBas).lte('tarih', ayBit),
+        ])
+        setSaglikSube({ merkez: merkezCount||0, sandikli: sandikliCount||0 })
         const { data: taramalar } = await sb.from('tarama_operasyonlari').select('tarih, planlanan_tarih, tutar')
         const tList = taramalar || []
         setSaglikStat({
@@ -334,6 +341,14 @@ export default function Dashboard() {
               {([['Bugün', saglikStat.bugun],['Bu Hafta', saglikStat.hafta],['Bu Ay', saglikStat.ay],['Bu Yıl', saglikStat.yil]] as any[]).map(([k,v]:[string,number]) => (
                 <div key={k} style={{ textAlign:'center', padding:'8px 4px', background:'var(--surface-2)', borderRadius:8 }}>
                   <div style={{ fontFamily:'Sora,sans-serif', fontSize:20, fontWeight:700 }}>{yukleniyor ? '—' : v}</div>
+                  <div style={{ fontSize:10, color:'var(--text-faint)', marginTop:2 }}>{k}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:10 }}>
+              {([['🏥 Merkez (Bu Ay)', saglikSube.merkez],['🏨 Sandıklı (Bu Ay)', saglikSube.sandikli]] as any[]).map(([k,v]:[string,number]) => (
+                <div key={k} style={{ textAlign:'center', padding:'8px 4px', background:'var(--surface-2)', borderRadius:8 }}>
+                  <div style={{ fontFamily:'Sora,sans-serif', fontSize:20, fontWeight:700, color:'var(--accent)' }}>{yukleniyor ? '—' : v}</div>
                   <div style={{ fontSize:10, color:'var(--text-faint)', marginTop:2 }}>{k}</div>
                 </div>
               ))}
