@@ -25,6 +25,7 @@ export default function Saglik() {
   const [modal, setModal] = useState(false)
   const [detay, setDetay] = useState<any>(null)
   const [yukleniyor, setYukleniyor] = useState(true)
+  const [nextPrNo, setNextPrNo] = useState<number|null>(null)
   const [hata, setHata] = useState('')
   const [form, setForm] = useState<any>(bosForm())
   const [sube, setSube] = useState<'merkez'|'sandikli'>('merkez')
@@ -102,6 +103,14 @@ export default function Saglik() {
     setToplamKayit(count || 0)
     setYukleniyor(false)
   }, [aramaDebounced, hekimFiltre, odemeFiltre, basTarih, bitTarih, sayfa, sube])
+
+  async function modalAc() {
+    const { data } = await sb.from('hasta_kayitlari').select('pr_no').order('pr_no', { ascending: false }).limit(1)
+    const next = data?.[0]?.pr_no ? Number(data[0].pr_no) + 1 : 1
+    setNextPrNo(next)
+    setForm({ ...bosForm(), pr_no: String(next) })
+    setModal(true)
+  }
 
   async function kaydet() {
     if (!form.ad_soyad) return
@@ -212,7 +221,7 @@ export default function Saglik() {
             {toplamKayit.toLocaleString('tr-TR')} kayıt{aramaDebounced ? ` · "${aramaDebounced}" araması` : ''}
           </p>
         </div>
-        <button className="btn" onClick={() => setModal(true)}><Plus size={18} /> Yeni Kayıt</button>
+        <button className="btn" onClick={modalAc}><Plus size={18} /> Yeni Kayıt</button>
       </div>
 
       {/* ŞUBE SEKMELERİ */}
