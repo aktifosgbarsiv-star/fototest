@@ -43,8 +43,9 @@ export default function Arsiv() {
 
     const rol = personel?.rol
     if (rol === 'saha' || rol === 'operasyon') {
-      // Sadece kendi firmaları
-      q = q.or(`igu_id.eq.${personel.id},ih_id.eq.${personel.id}`)
+      // igu_id/ih_id UUID eşleşmesi VEYA gorevli_igu/ih text eşleşmesi
+      const ad = personel.ad_soyad || ''
+      q = q.or(`igu_id.eq.${personel.id},ih_id.eq.${personel.id},gorevli_igu.ilike.%${ad}%,gorevli_ih.ilike.%${ad}%`)
     }
 
     const { data: firmaData } = await q
