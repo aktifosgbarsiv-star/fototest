@@ -3,17 +3,17 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { UserCog, Menu, X, LogOut, LayoutDashboard, Building2, HeartPulse, FileText, Wallet, ClipboardList, CalendarDays, MapPin, Stethoscope, Package, Truck, Activity, BarChart2 } from 'lucide-react'
+import { UserCog, Menu, X, LogOut, LayoutDashboard, Building2, HeartPulse, FileText, Wallet, ClipboardList, CalendarDays, MapPin, Stethoscope, Package, Truck, Activity, BarChart2, AlertTriangle, FolderArchive, SearchIcon } from 'lucide-react'
 
 const ROL_AD: any = { yonetici:'Yönetici', operasyon:'Operasyon', hekim:'Hekim', satis:'Satış', muhasebe:'Muhasebe', saha:'Saha Uzmanı' }
 
 const ERISIM: any = {
-  yonetici:  ['/','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura'],
-  operasyon: ['/','/firmalar','/koordinasyon','/idari','/ziyaretler','/taramalar'],
-  hekim:     ['/','/saglik','/hekim','/koordinasyon'],
+  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv'],
+  operasyon: ['/','/firmalar','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
+  hekim:     ['/','/saglik','/hekim','/koordinasyon','/arsiv'],
   satis:     ['/','/firmalar','/teklifler','/malzemeler','/tedarikciler'],
   muhasebe:  ['/','/tahsilat','/saglik','/fatura'],
-  saha:      ['/','/koordinasyon','/firmalar','/ziyaretler'],
+  saha:      ['/','/koordinasyon','/firmalar','/ziyaretler','/arsiv'],
 }
 
 const TUM_LINKLER = [
@@ -32,6 +32,8 @@ const TUM_LINKLER = [
   { href:'/fatura', label:'Fatura Takibi', icon:FileText },
   { href:'/raporlar', label:'Raporlar', icon:BarChart2 },
   { href:'/personeller', label:'Personel & Yetkiler', icon:UserCog },
+  { href:'/eksik-veriler', label:'Eksik Veriler', icon:AlertTriangle },
+  { href:'/arsiv', label:'Arşiv', icon:FolderArchive },
 ]
 
 export default function MobileTopbar() {
