@@ -16,10 +16,9 @@ export default function Ziyaretler() {
   const [yil, setYil] = useState(new Date().getFullYear())
   const [yukleniyor, setYukleniyor] = useState(true)
   const [personeller, setPersoneller] = useState<any[]>([])
-  const [detayFirma, setDetayFirma] = useState<any>(null)
-  const [detayAy, setDetayAy] = useState<number|null>(null)
-  const [ziyaretBilgi, setZiyaretBilgi] = useState<any>(null) // {firma, ayIdx, bilgi}
-  const [form, setForm] = useState({ tarih: new Date().toISOString().slice(0,10), tur: 'İGU', notlar: '', fatura: false, operasyon_yapan: '', operasyon_yapan_id: '' })
+  const [ziyaretBilgi, setZiyaretBilgi] = useState<any>(null) // {firma, ayIdx, tur, bilgi}
+  const [modal, setModal] = useState<any>(null) // {firma, ayIdx, tur: 'igu'|'ih'}
+  const [form, setForm] = useState({ tarih: new Date().toISOString().slice(0,10), notlar: '', operasyon_yapan: '', operasyon_yapan_id: '' })
   const [kayitYukleniyor, setKayitYukleniyor] = useState(false)
   const debounceRef = useRef<any>(null)
   const sb = createClient()
@@ -29,9 +28,7 @@ export default function Ziyaretler() {
       if (data.user) {
         const { data: p } = await sb.from('personeller').select('*').eq('id', data.user.id).single()
         setMevcutPersonel(p || { rol: 'operasyon' })
-      } else {
-        setMevcutPersonel({ rol: 'operasyon' })
-      }
+      } else setMevcutPersonel({ rol: 'operasyon' })
     })
   }, [])
 
@@ -69,37 +66,30 @@ export default function Ziyaretler() {
     setYukleniyor(false)
   }
 
-  function ayZiyaretSayisi(firma: any, ayIdx: number) {
+  // aylik_ziyaretler formatı:
+  // yeni: "2026-01": { igu: {tarih, gidildi, notlar, operasyon_yapan}, ih: {tarih, gidildi, notlar, operasyon_yapan} }
+  // eski: "2026-01": { tarih, gidildi, tur, notlar, ... }
+  function getZiyaret(firma: any, ayIdx: number, tur: 'igu'|'ih') {
     const ayKey = `${yil}-${String(ayIdx + 1).padStart(2, '0')}`
     const z = (firma.aylik_ziyaretler || {})[ayKey]
-    return z ? (z.sayi || 1) : 0
+    if (!z) return null
+    // Yeni format
+    if (z.igu !== undefined || z.ih !== undefined) return z[tur] || null
+    // Eski format - tur eşleşiyorsa göster
+    if (tur === 'igu' && (!z.tur || z.tur === 'İGU')) return z
+    if (tur === 'ih' && z.tur === 'İH') return z
+    return null
   }
 
-  function ayFaturaDurumu(firma: any, ayIdx: number) {
-    const ayKey = `${yil}-${String(ayIdx + 1).padStart(2, '0')}`
-    const z = (firma.aylik_ziyaretler || {})[ayKey]
-    return z?.fatura || false
-  }
-
-  async function faturaToggle(firma: any, ayIdx: number) {
-    const ayKey = `${yil}-${String(ayIdx + 1).padStart(2, '0')}`
-    const mevcut = firma.aylik_ziyaretler || {}
-    const mevcutAy = mevcut[ayKey] || {}
-    const guncel = { ...mevcut, [ayKey]: { ...mevcutAy, fatura: !mevcutAy.fatura } }
-    await sb.from('firmalar').update({ aylik_ziyaretler: guncel }).eq('id', firma.id)
-    yukle()
-  }
-
-  function ziyaretDurumu(firma: any, ayIdx: number) {
-    const ayKey = `${yil}-${String(ayIdx + 1).padStart(2, '0')}`
-    const periyot = parseFloat(firma.ih_periyot)
-    const gidildi = !!(firma.aylik_ziyaretler || {})[ayKey]
+  function ziyaretDurumu(firma: any, ayIdx: number, tur: 'igu'|'ih'): 'gelecek'|'gidildi'|'gidilmedi'|'gerekmiyor' {
     const simdi = new Date()
     const gelecek = yil > simdi.getFullYear() || (yil === simdi.getFullYear() && ayIdx > simdi.getMonth())
-
     if (gelecek) return 'gelecek'
-    if (gidildi) return 'gidildi'
 
+    const z = getZiyaret(firma, ayIdx, tur)
+    if (z?.gidildi || (z && z.tarih)) return 'gidildi'
+
+    const periyot = parseFloat(firma.ih_periyot)
     let gerekirMi = false
     if (periyot <= 0.5) gerekirMi = true
     else if (periyot <= 1.0) gerekirMi = ayIdx % 2 === 0
@@ -117,23 +107,56 @@ export default function Ziyaretler() {
   }
 
   async function ziyaretEkle() {
-    if (!detayFirma || detayAy === null) return
+    if (!modal) return
     setKayitYukleniyor(true)
-    const ayKey = `${yil}-${String(detayAy + 1).padStart(2, '0')}`
-    const mevcut = detayFirma.aylik_ziyaretler || {}
-    const guncel = { ...mevcut, [ayKey]: { ...mevcut[ayKey], gidildi: true, tarih: form.tarih, tur: form.tur, notlar: form.notlar, fatura: form.fatura || false, operasyon_yapan: form.operasyon_yapan || mevcutPersonel?.ad_soyad || '' } }
+    const { firma, ayIdx, tur } = modal
+    const ayKey = `${yil}-${String(ayIdx + 1).padStart(2, '0')}`
+    const mevcut = firma.aylik_ziyaretler || {}
+    const mevcutAy = mevcut[ayKey] || {}
 
-    await sb.from('firmalar').update({ aylik_ziyaretler: guncel }).eq('id', detayFirma.id)
+    // Yeni format: { igu: {...}, ih: {...} }
+    const yeniAy = {
+      ...mevcutAy,
+      [tur]: {
+        tarih: form.tarih,
+        gidildi: true,
+        notlar: form.notlar,
+        operasyon_yapan: form.operasyon_yapan || mevcutPersonel?.ad_soyad || '',
+        operasyon_yapan_id: form.operasyon_yapan_id || mevcutPersonel?.id || null,
+        ziyaret_eden: mevcutPersonel?.ad_soyad || '',
+      }
+    }
+    const guncel = { ...mevcut, [ayKey]: yeniAy }
+
+    await sb.from('firmalar').update({ aylik_ziyaretler: guncel }).eq('id', firma.id)
     await sb.from('ziyaretler').insert({
-      firma_id: detayFirma.id, tarih: form.tarih, tur: form.tur, notlar: form.notlar,
-      ziyaret_eden: mevcutPersonel?.ad_soyad || '', ziyaret_eden_id: mevcutPersonel?.id || null,
+      firma_id: firma.id, tarih: form.tarih,
+      tur: tur === 'igu' ? 'İGU' : 'İH',
+      notlar: form.notlar,
+      ziyaret_eden: mevcutPersonel?.ad_soyad || '',
+      ziyaret_eden_id: mevcutPersonel?.id || null,
       operasyon_yapan: form.operasyon_yapan || mevcutPersonel?.ad_soyad || '',
       operasyon_yapan_id: form.operasyon_yapan_id || mevcutPersonel?.id || null,
-      fatura_kesildi: form.fatura || false
     })
-    setDetayFirma(null); setDetayAy(null)
+    setModal(null)
     yukle()
     setKayitYukleniyor(false)
+  }
+
+  function exportCSV() {
+    const rows: any[] = []
+    firmalar.forEach(f => {
+      for (let ay = 0; ay < 12; ay++) {
+        const ayKey = `${yil}-${String(ay+1).padStart(2,'0')}`
+        const z = (f.aylik_ziyaretler||{})[ayKey]
+        if (!z) continue
+        const igu = z.igu || (z.tur === 'İGU' || !z.tur ? z : null)
+        const ih = z.ih || (z.tur === 'İH' ? z : null)
+        if (igu) rows.push({ 'Firma': f.unvan, 'Ay': ay+1, 'Tür': 'İGU', 'Tarih': igu.tarih||'', 'Operasyon Yapan': igu.operasyon_yapan||'', 'Notlar': igu.notlar||'' })
+        if (ih) rows.push({ 'Firma': f.unvan, 'Ay': ay+1, 'Tür': 'İH', 'Tarih': ih.tarih||'', 'Operasyon Yapan': ih.operasyon_yapan||'', 'Notlar': ih.notlar||'' })
+      }
+    })
+    csvIndir(rows, `ziyaretler_${yil}`)
   }
 
   const simdi = new Date()
@@ -142,30 +165,37 @@ export default function Ziyaretler() {
   const rol = mevcutPersonel?.rol || 'operasyon'
   const yazabilir = !['saha'].includes(rol)
 
-  function exportCSV() {
-    const rows: any[] = []
-    firmalar.forEach(f => {
-      for (let ay = 0; ay < 12; ay++) {
-        const ayKey = `${yil}-${String(ay+1).padStart(2,'0')}`
-        const z = (f.aylik_ziyaretler||{})[ayKey]
-        if (z) {
-          rows.push({
-            'Firma': f.unvan||'', 'Tehlike': f.tehlike_sinifi||'', 'İH Periyot': f.ih_periyot||'',
-            'Yıl': yil, 'Ay': ay+1,
-            'Ziyaret Eden': z.ziyaret_eden||'', 'Tur': z.tur||'',
-            'Fatura': z.fatura ? 'Evet' : 'Hayır', 'Notlar': z.notlar||'',
-          })
-        }
-      }
-    })
-    csvIndir(rows, `ziyaretler_${yil}`)
-  }
-
   const istatistik = {
     toplam: firmalar.length,
-    buAyGidilen: firmalar.filter(f => !!(f.aylik_ziyaretler || {})[`${yil}-${String(buAy+1).padStart(2,'0')}`]).length,
-    gidilmemis: firmalar.filter(f => ziyaretDurumu(f, buAy) === 'gidilmedi').length,
+    buAyGidilen: firmalar.filter(f => getZiyaret(f, buAy, 'igu') || getZiyaret(f, buAy, 'ih')).length,
+    gidilmemis: firmalar.filter(f => ziyaretDurumu(f, buAy, 'igu') === 'gidilmedi' || ziyaretDurumu(f, buAy, 'ih') === 'gidilmedi').length,
     atamasiz: firmalar.filter(f => atamaDurumu(f) === 'kirmizi').length,
+  }
+
+  function Tick({ firma, ayIdx, tur }: { firma: any, ayIdx: number, tur: 'igu'|'ih' }) {
+    const durum = ziyaretDurumu(firma, ayIdx, tur)
+    const bilgi = getZiyaret(firma, ayIdx, tur)
+    const tiklanabilir = yazabilir || (firma.gorevli_igu?.includes(mevcutPersonel?.ad_soyad) || firma.gorevli_ih?.includes(mevcutPersonel?.ad_soyad))
+
+    if (durum === 'gelecek') {
+      return <div style={{ width:16, height:16, border:'1px dashed var(--border)', borderRadius:3, margin:'0 auto', opacity:0.3 }}/>
+    }
+    if (durum === 'gidildi') {
+      return (
+        <div onClick={() => setZiyaretBilgi({ firma, ayIdx, tur, bilgi })}
+          style={{ width:18, height:18, background:'#22c55e', borderRadius:3, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+          <span style={{ color:'white', fontSize:9, fontWeight:700 }}>✓</span>
+        </div>
+      )
+    }
+    if (durum === 'gerekmiyor') {
+      return <div style={{ width:16, height:16, border:'1px dashed var(--border)', borderRadius:3, margin:'0 auto', opacity:0.2 }}/>
+    }
+    // gidilmedi
+    return (
+      <div onClick={() => tiklanabilir && yazabilir ? setModal({ firma, ayIdx, tur }) : null}
+        style={{ width:18, height:18, border:'2px solid #ef4444', borderRadius:3, margin:'0 auto', cursor:tiklanabilir&&yazabilir?'pointer':'default', background:'rgba(239,68,68,0.08)' }}/>
+    )
   }
 
   return (
@@ -220,7 +250,7 @@ export default function Ziyaretler() {
         <div style={{ textAlign:'center', padding:60, color:'var(--text-faint)' }}>Yükleniyor...</div>
       ) : (
         <div className="card" style={{ overflow:'auto', padding:0 }}>
-          <table style={{ minWidth:1100, fontSize:11 }}>
+          <table style={{ minWidth:1400, fontSize:11 }}>
             <thead>
               <tr style={{ background:'var(--surface-2)', borderBottom:'1px solid var(--border)' }}>
                 <th style={{ textAlign:'left', padding:'10px 12px', position:'sticky', left:0, background:'var(--surface-2)', zIndex:2, minWidth:220, borderRight:'1px solid var(--border)' }}>FİRMA</th>
@@ -231,16 +261,16 @@ export default function Ziyaretler() {
                 <th style={{ textAlign:'center', padding:'10px 6px', minWidth:90, color:'#f59e0b', background:'#f59e0b11' }}>BHL ATAMA</th>
                 {AYLAR.map((ay,i) => (
                   <th key={i} colSpan={2} style={{
-                    textAlign:'center', padding:'8px 2px', minWidth:72,
+                    textAlign:'center', padding:'6px 2px', minWidth:64,
                     color: i===buAy&&yil===buYil ? 'var(--accent)' : 'var(--text-dim)',
-                    borderLeft: `1px solid var(--border)`,
+                    borderLeft: '1px solid var(--border)',
                     fontWeight: i===buAy&&yil===buYil ? 700 : 500,
                     background: i===buAy&&yil===buYil ? 'rgba(99,102,241,0.06)' : 'transparent'
                   }}>
                     {ay}
                     <div style={{ display:'flex', justifyContent:'center', gap:2, marginTop:2 }}>
-                      <span style={{ fontSize:9, color:'var(--text-faint)', width:32, textAlign:'center' }}>Sayı</span>
-                      <span style={{ fontSize:9, color:'var(--text-faint)', width:32, textAlign:'center' }}>Fat.</span>
+                      <span style={{ fontSize:9, color:'#22c55e', width:28, textAlign:'center' }}>İGU</span>
+                      <span style={{ fontSize:9, color:'var(--blue)', width:28, textAlign:'center' }}>İH</span>
                     </div>
                   </th>
                 ))}
@@ -248,11 +278,10 @@ export default function Ziyaretler() {
             </thead>
             <tbody>
               {firmalar.length === 0 ? (
-                <tr><td colSpan={17} style={{ textAlign:'center', padding:40, color:'var(--text-faint)' }}>Firma bulunamadı</td></tr>
+                <tr><td colSpan={20} style={{ textAlign:'center', padding:40, color:'var(--text-faint)' }}>Firma bulunamadı</td></tr>
               ) : firmalar.map((firma, fi) => {
                 const atama = atamaDurumu(firma)
                 const satirBg = fi%2===0 ? 'var(--surface)' : 'var(--surface-2)'
-                const tiklanabilir = rol !== 'saha' || (firma.gorevli_igu?.includes(mevcutPersonel?.ad_soyad) || firma.gorevli_ih?.includes(mevcutPersonel?.ad_soyad))
                 return (
                   <tr key={firma.id} style={{ borderBottom:'1px solid var(--border)' }}>
                     <td style={{ padding:'7px 12px', position:'sticky', left:0, background:satirBg, zIndex:1, borderRight:'1px solid var(--border)' }}>
@@ -287,46 +316,16 @@ export default function Ziyaretler() {
                       )
                     })}
                     {AYLAR.map((_,ayIdx) => {
-                      const durum = ziyaretDurumu(firma, ayIdx)
-                      const ayKey = `${yil}-${String(ayIdx+1).padStart(2,'0')}`
-                      const bilgi = (firma.aylik_ziyaretler||{})[ayKey]
-                      const sayi = ayZiyaretSayisi(firma, ayIdx)
-                      const fatura = ayFaturaDurumu(firma, ayIdx)
-                      const ayBg = durum==='gidildi'?'rgba(34,197,94,0.08)':durum==='gidilmedi'?'rgba(239,68,68,0.06)':'transparent'
+                      const iguDurum = ziyaretDurumu(firma, ayIdx, 'igu')
+                      const ihDurum = ziyaretDurumu(firma, ayIdx, 'ih')
+                      const ayBg = (iguDurum==='gidildi'||ihDurum==='gidildi') ? 'rgba(34,197,94,0.05)'
+                               : (iguDurum==='gidilmedi'||ihDurum==='gidilmedi') ? 'rgba(239,68,68,0.05)' : 'transparent'
                       return [
-                        // Sayı hücresi
-                        <td key={`s${ayIdx}`} style={{
-                          textAlign:'center', padding:'5px 2px', borderLeft:'1px solid var(--border)',
-                          background: ayBg, minWidth:32
-                        }}>
-                          {durum==='gelecek' ? (
-                            <div style={{ width:16, height:16, border:'1px dashed var(--border)', borderRadius:3, margin:'0 auto', opacity:0.3 }}/>
-                          ) : durum==='gidildi' ? (
-                            <div
-                              onClick={() => setZiyaretBilgi({ firma, ayIdx, bilgi })}
-                              title={bilgi?.tarih ? `${bilgi.tarih}` : ''}
-                              style={{ width:18, height:18, background:'#22c55e', borderRadius:3, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-                              <span style={{ color:'white', fontSize:9, fontWeight:700 }}>✓</span>
-                            </div>
-                          ) : (
-                            <div onClick={() => yazabilir?(setDetayFirma(firma),setDetayAy(ayIdx)):null}
-                              style={{ width:18, height:18, border:`2px solid ${durum==='gidilmedi'?'#ef4444':'var(--border)'}`, borderRadius:3, margin:'0 auto', cursor:tiklanabilir?'pointer':'default', background:durum==='gidilmedi'?'rgba(239,68,68,0.08)':'transparent' }}/>
-                          )}
+                        <td key={`igu${ayIdx}`} style={{ textAlign:'center', padding:'5px 2px', borderLeft:'1px solid var(--border)', background:ayBg, minWidth:28 }}>
+                          <Tick firma={firma} ayIdx={ayIdx} tur="igu"/>
                         </td>,
-                        // Fatura hücresi
-                        <td key={`f${ayIdx}`} style={{
-                          textAlign:'center', padding:'5px 2px',
-                          background: ayBg, minWidth:32
-                        }}>
-                          {durum==='gelecek' || durum==='gerekmiyor' ? (
-                            <div style={{ width:16, height:16, border:'1px dashed var(--border)', borderRadius:3, margin:'0 auto', opacity:0.2 }}/>
-                          ) : (
-                            <div onClick={() => (yazabilir||rol==='muhasebe')&&durum==='gidildi'?faturaToggle(firma,ayIdx):null}
-                              title={fatura?'Fatura kesildi':'Fatura bekleniyor'}
-                              style={{ width:18, height:18, border:`2px solid ${fatura?'#f59e0b':'var(--border)'}`, borderRadius:3, margin:'0 auto', cursor:(yazabilir||rol==='muhasebe')&&durum==='gidildi'?'pointer':'default', background:fatura?'rgba(245,158,11,0.3)':'transparent', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                              {fatura && <span style={{ color:'#f59e0b', fontSize:9, fontWeight:700 }}>✓</span>}
-                            </div>
-                          )}
+                        <td key={`ih${ayIdx}`} style={{ textAlign:'center', padding:'5px 2px', background:ayBg, minWidth:28 }}>
+                          <Tick firma={firma} ayIdx={ayIdx} tur="ih"/>
                         </td>
                       ]
                     })}
@@ -357,21 +356,14 @@ export default function Ziyaretler() {
               </h2>
               <button onClick={() => setZiyaretBilgi(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-dim)' }}><X size={20}/></button>
             </div>
-
-            {/* Firma + Ay */}
             <div style={{ background:'var(--surface-2)', borderRadius:10, padding:'12px 14px', marginBottom:14 }}>
               <div style={{ fontWeight:600, fontSize:14, marginBottom:4 }}>{ziyaretBilgi.firma.unvan}</div>
-              <div style={{ fontSize:13, color:'var(--text-dim)' }}>{AYLAR_FULL[ziyaretBilgi.ayIdx]} {yil}</div>
+              <div style={{ fontSize:13, color:'var(--text-dim)' }}>{AYLAR_FULL[ziyaretBilgi.ayIdx]} {yil} — {ziyaretBilgi.tur === 'igu' ? 'İGU' : 'İH'}</div>
             </div>
-
-            {/* Bilgiler */}
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {[
-                ['📅 Tarih', ziyaretBilgi.bilgi?.tarih
-                  ? new Date(ziyaretBilgi.bilgi.tarih + 'T00:00:00').toLocaleDateString('tr-TR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
-                  : '—'],
-                ['👤 Ziyaret Eden', ziyaretBilgi.bilgi?.ziyaret_eden || ziyaretBilgi.firma.gorevli_igu || '—'],
-                ['🏥 Tür', ziyaretBilgi.bilgi?.tur || 'İGU'],
+                ['📅 Tarih', ziyaretBilgi.bilgi?.tarih ? new Date(ziyaretBilgi.bilgi.tarih + 'T00:00:00').toLocaleDateString('tr-TR', { weekday:'long', day:'numeric', month:'long', year:'numeric' }) : '—'],
+                ['👤 Ziyaret Eden', ziyaretBilgi.bilgi?.ziyaret_eden || '—'],
                 ['⚙️ Operasyon Yapan', ziyaretBilgi.bilgi?.operasyon_yapan || '—'],
                 ['📝 Notlar', ziyaretBilgi.bilgi?.notlar || '—'],
               ].map(([k, v]) => (
@@ -381,20 +373,25 @@ export default function Ziyaretler() {
                 </div>
               ))}
             </div>
-
-            {/* Sil butonu - yazabilir ise */}
             {yazabilir && (
-              <button
-                onClick={async () => {
-                  if (!confirm('Bu ziyaret kaydını silmek istiyor musunuz?')) return
-                  const ayKey = `${yil}-${String(ziyaretBilgi.ayIdx + 1).padStart(2, '0')}`
-                  const mevcut = { ...(ziyaretBilgi.firma.aylik_ziyaretler || {}) }
+              <button onClick={async () => {
+                if (!confirm('Bu ziyareti silmek istiyor musunuz?')) return
+                const ayKey = `${yil}-${String(ziyaretBilgi.ayIdx + 1).padStart(2, '0')}`
+                const mevcut = { ...(ziyaretBilgi.firma.aylik_ziyaretler || {}) }
+                const mevcutAy = mevcut[ayKey] || {}
+                if (mevcutAy.igu !== undefined || mevcutAy.ih !== undefined) {
+                  // Yeni format - sadece o türü sil
+                  const yeniAy = { ...mevcutAy }
+                  delete yeniAy[ziyaretBilgi.tur]
+                  if (Object.keys(yeniAy).length === 0) delete mevcut[ayKey]
+                  else mevcut[ayKey] = yeniAy
+                } else {
                   delete mevcut[ayKey]
-                  await createClient().from('firmalar').update({ aylik_ziyaretler: mevcut }).eq('id', ziyaretBilgi.firma.id)
-                  setZiyaretBilgi(null)
-                  yukle()
-                }}
-                style={{ marginTop:16, width:'100%', padding:'10px', borderRadius:9, border:'1px solid var(--red)', background:'var(--red-soft)', color:'var(--red)', cursor:'pointer', fontSize:13, fontFamily:'inherit', fontWeight:600 }}>
+                }
+                await createClient().from('firmalar').update({ aylik_ziyaretler: mevcut }).eq('id', ziyaretBilgi.firma.id)
+                setZiyaretBilgi(null)
+                yukle()
+              }} style={{ marginTop:16, width:'100%', padding:'10px', borderRadius:9, border:'1px solid var(--red)', background:'var(--red-soft)', color:'var(--red)', cursor:'pointer', fontSize:13, fontFamily:'inherit', fontWeight:600 }}>
                 🗑️ Ziyareti Sil
               </button>
             )}
@@ -402,34 +399,25 @@ export default function Ziyaretler() {
         </div>
       )}
 
-      {detayFirma && detayAy!==null && (
-        <div className="modal-overlay" onClick={()=>{setDetayFirma(null);setDetayAy(null)}}>
+      {/* ZİYARET EKLE MODAL */}
+      {modal && (
+        <div className="modal-overlay" onClick={()=>setModal(null)}>
           <div className="modal-content" onClick={e=>e.stopPropagation()} style={{ maxWidth:400 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
               <div>
                 <h2 style={{ fontFamily:'Sora,sans-serif', fontSize:18, fontWeight:600, display:'flex', alignItems:'center', gap:8 }}>
                   <MapPin size={17} color="var(--green)"/> Ziyaret Kaydet
                 </h2>
-                <p style={{ fontSize:11, color:'var(--text-dim)', marginTop:3 }}>{detayFirma.unvan} — {AYLAR_FULL[detayAy]} {yil}</p>
+                <p style={{ fontSize:11, color:'var(--text-dim)', marginTop:3 }}>
+                  {modal.firma.unvan} — {AYLAR_FULL[modal.ayIdx]} {yil} — <strong>{modal.tur === 'igu' ? 'İGU' : 'İH'}</strong>
+                </p>
               </div>
-              <button onClick={()=>{setDetayFirma(null);setDetayAy(null)}} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-dim)' }}><X size={20}/></button>
+              <button onClick={()=>setModal(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-dim)' }}><X size={20}/></button>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div>
                 <label style={{ fontSize:12, color:'var(--text-dim)', display:'block', marginBottom:6, fontWeight:500 }}>Tarih</label>
                 <input type="date" value={form.tarih} onChange={e=>setForm(f=>({...f,tarih:e.target.value}))}/>
-              </div>
-              <div>
-                <label style={{ fontSize:12, color:'var(--text-dim)', display:'block', marginBottom:6, fontWeight:500 }}>Tür</label>
-                <div style={{ display:'flex', gap:8 }}>
-                  {['İGU','İH','DSP'].map(t=>(
-                    <button key={t} onClick={()=>setForm(f=>({...f,tur:t}))}
-                      style={{ flex:1, padding:'9px', borderRadius:8, fontSize:13, cursor:'pointer', fontFamily:'inherit',
-                        background:form.tur===t?'var(--accent-soft)':'var(--surface-2)',
-                        border:`1px solid ${form.tur===t?'var(--accent)':'var(--border)'}`,
-                        color:form.tur===t?'var(--accent)':'var(--text-dim)' }}>{t}</button>
-                  ))}
-                </div>
               </div>
               <div>
                 <label style={{ fontSize:12, color:'var(--text-dim)', display:'block', marginBottom:6, fontWeight:500 }}>
@@ -452,7 +440,7 @@ export default function Ziyaretler() {
                   style={{ width:'100%', padding:'10px 12px', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:10, color:'var(--text)', fontSize:13, fontFamily:'inherit', resize:'vertical' }}/>
               </div>
               <div style={{ display:'flex', gap:10 }}>
-                <button className="btn-ghost btn" style={{ flex:1, justifyContent:'center' }} onClick={()=>{setDetayFirma(null);setDetayAy(null)}}>İptal</button>
+                <button className="btn-ghost btn" style={{ flex:1, justifyContent:'center' }} onClick={()=>setModal(null)}>İptal</button>
                 <button className="btn" style={{ flex:1, justifyContent:'center' }} onClick={ziyaretEkle} disabled={kayitYukleniyor}>
                   {kayitYukleniyor?'Kaydediliyor...':'Kaydet'}
                 </button>
