@@ -162,6 +162,7 @@ export default function HekimEkrani() {
           <p className="page-sub">{mevcutHekim?.ad_soyad || '...'} · {ayLabel}</p>
         </div>
         <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+          <button onClick={exportCSV} style={{ padding:'8px 12px', borderRadius:10, border:'1px solid var(--border)', background:'var(--surface)', cursor:'pointer', color:'var(--text-dim)', fontSize:13, display:'flex', alignItems:'center', gap:5 }}><Download size={14}/> CSV</button>
           {(['gorev','gun','hafta','tum'] as const).map(m => (
             <button key={m} onClick={()=>setMod(m)}
               style={{ padding:'8px 14px', borderRadius:10, fontSize:13, cursor:'pointer', fontFamily:'inherit',
