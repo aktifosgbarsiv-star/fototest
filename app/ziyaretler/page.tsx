@@ -165,12 +165,21 @@ export default function Ziyaretler() {
   const rol = mevcutPersonel?.rol || 'operasyon'
   const yazabilir = !['saha'].includes(rol)
 
-  const istatistik = {
-    toplam: firmalar.length,
-    buAyGidilen: firmalar.filter(f => getZiyaret(f, buAy, 'igu') || getZiyaret(f, buAy, 'ih')).length,
-    gidilmemis: firmalar.filter(f => ziyaretDurumu(f, buAy, 'igu') === 'gidilmedi' || ziyaretDurumu(f, buAy, 'ih') === 'gidilmedi').length,
-    atamasiz: firmalar.filter(f => atamaDurumu(f) === 'kirmizi').length,
-  }
+  const istatistik = (() => {
+    let buAyZiyaretSayisi = 0
+    let bekleyenFirma = 0
+    firmalar.forEach(f => {
+      if (ziyaretDurumu(f, buAy, 'igu') === 'gidildi') buAyZiyaretSayisi++
+      if (ziyaretDurumu(f, buAy, 'ih') === 'gidildi') buAyZiyaretSayisi++
+      if (ziyaretDurumu(f, buAy, 'igu') === 'gidilmedi' || ziyaretDurumu(f, buAy, 'ih') === 'gidilmedi') bekleyenFirma++
+    })
+    return {
+      toplam: firmalar.length,
+      buAyZiyaretSayisi,
+      bekleyenFirma,
+      atamasiz: firmalar.filter(f => atamaDurumu(f) === 'kirmizi').length,
+    }
+  })()
 
   function Tick({ firma, ayIdx, tur }: { firma: any, ayIdx: number, tur: 'igu'|'ih' }) {
     const durum = ziyaretDurumu(firma, ayIdx, tur)
@@ -178,20 +187,19 @@ export default function Ziyaretler() {
     const tiklanabilir = yazabilir || (firma.gorevli_igu?.includes(mevcutPersonel?.ad_soyad) || firma.gorevli_ih?.includes(mevcutPersonel?.ad_soyad))
 
     if (durum === 'gelecek') {
-      // Yönetici gelecek aya da girebilir
       if (rol === 'yonetici') {
         return (
           <div onClick={() => setModal({ firma, ayIdx, tur })}
-            style={{ width:16, height:16, border:'1px dashed var(--border)', borderRadius:3, margin:'0 auto', opacity:0.4, cursor:'pointer' }}/>
+            style={{ width:18, height:18, border:'2px dashed rgba(255,255,255,0.2)', borderRadius:4, margin:'0 auto', opacity:0.5, cursor:'pointer' }}/>
         )
       }
-      return <div style={{ width:16, height:16, border:'1px dashed var(--border)', borderRadius:3, margin:'0 auto', opacity:0.5 }}/>
+      return <div style={{ width:18, height:18, border:'2px dashed rgba(255,255,255,0.2)', borderRadius:4, margin:'0 auto', opacity:0.4 }}/>
     }
     if (durum === 'gidildi') {
       return (
         <div onClick={() => setZiyaretBilgi({ firma, ayIdx, tur, bilgi })}
-          style={{ width:18, height:18, background:'#22c55e', borderRadius:3, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-          <span style={{ color:'white', fontSize:9, fontWeight:700 }}>✓</span>
+          style={{ width:20, height:20, background:'#22c55e', border:'2px solid #16a34a', borderRadius:4, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 0 6px rgba(34,197,94,0.4)' }}>
+          <span style={{ color:'white', fontSize:10, fontWeight:700 }}>✓</span>
         </div>
       )
     }
@@ -199,15 +207,15 @@ export default function Ziyaretler() {
       if (rol === 'yonetici') {
         return (
           <div onClick={() => setModal({ firma, ayIdx, tur })}
-            style={{ width:16, height:16, border:'1px dashed var(--border)', borderRadius:3, margin:'0 auto', opacity:0.4, cursor:'pointer' }}/>
+            style={{ width:18, height:18, border:'2px dashed rgba(255,255,255,0.15)', borderRadius:4, margin:'0 auto', opacity:0.4, cursor:'pointer' }}/>
         )
       }
-      return <div style={{ width:16, height:16, border:'1px solid var(--border)', borderRadius:3, margin:'0 auto', opacity:0.45 }}/>
+      return <div style={{ width:18, height:18, border:'2px solid rgba(255,255,255,0.12)', borderRadius:4, margin:'0 auto', opacity:0.35 }}/>
     }
     // gidilmedi
     return (
       <div onClick={() => tiklanabilir && yazabilir ? setModal({ firma, ayIdx, tur }) : null}
-        style={{ width:18, height:18, border:'1px solid var(--border)', borderRadius:3, margin:'0 auto', cursor:tiklanabilir&&yazabilir?'pointer':'default', background:'var(--surface)' }}/>
+        style={{ width:20, height:20, border:'2px solid rgba(255,255,255,0.35)', borderRadius:4, margin:'0 auto', cursor:tiklanabilir&&yazabilir?'pointer':'default', background:'transparent', transition:'border-color 0.15s' }}/>
     )
   }
 
@@ -232,14 +240,15 @@ export default function Ziyaretler() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
         {[
-          { label: 'Toplam Firma', val: istatistik.toplam, renk: 'var(--accent)' },
-          { label: 'Bu Ay Gidilen', val: istatistik.buAyGidilen, renk: 'var(--green)' },
-          { label: 'Bu Ay Geciken', val: istatistik.gidilmemis, renk: 'var(--red)' },
-          { label: 'Atamasız', val: istatistik.atamasiz, renk: 'var(--amber)' },
+          { label: 'Toplam Firma', val: istatistik.toplam, renk: 'var(--accent)', alt: 'aktif periyotlu' },
+          { label: `${AYLAR_FULL[buAy]} Ziyaret`, val: istatistik.buAyZiyaretSayisi, renk: 'var(--green)', alt: 'yapılan ziyaret' },
+          { label: 'Ziyaret Bekleyen', val: istatistik.bekleyenFirma, renk: 'var(--red)', alt: 'bu ay bekliyor' },
+          { label: 'Atamasız', val: istatistik.atamasiz, renk: 'var(--amber)', alt: 'atama yok' },
         ].map((k,i) => (
           <div key={i} className="card" style={{ padding: '12px 16px' }}>
             <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 4 }}>{k.label}</div>
             <div style={{ fontFamily: 'Sora,sans-serif', fontSize: 26, fontWeight: 700, color: k.renk }}>{k.val}</div>
+            <div style={{ fontSize: 10, color: 'var(--text-faint)', marginTop: 2 }}>{k.alt}</div>
           </div>
         ))}
       </div>
