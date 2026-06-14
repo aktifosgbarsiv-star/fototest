@@ -207,7 +207,7 @@ export default function Ziyaretler() {
     // gidilmedi
     return (
       <div onClick={() => tiklanabilir && yazabilir ? setModal({ firma, ayIdx, tur }) : null}
-        style={{ width:18, height:18, border:'2px solid #ef4444', borderRadius:3, margin:'0 auto', cursor:tiklanabilir&&yazabilir?'pointer':'default', background:'rgba(239,68,68,0.08)' }}/>
+        style={{ width:18, height:18, border:'1px solid var(--border)', borderRadius:3, margin:'0 auto', cursor:tiklanabilir&&yazabilir?'pointer':'default', background:'var(--surface)' }}/>
     )
   }
 

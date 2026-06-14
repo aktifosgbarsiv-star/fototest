@@ -24,12 +24,12 @@ const GRUPLAR = [
   { baslik:'ISG & Firmalar', linkler:[
     { href:'/firmalar', label:'Firmalar', icon:Building2 },
     { href:'/ziyaretler', label:'ISG Ziyaretleri', icon:MapPin },
-    { href:'/koordinasyon', label:'Koordinasyon', icon:CalendarDays },
+    { href:'/koordinasyon', label:'Görev Takibi', icon:CalendarDays },
   ]},
   { baslik:'Sağlık', linkler:[
     { href:'/saglik', label:'Sağlık Raporu', icon:HeartPulse },
     { href:'/hekim', label:'Hekim Ekranı', icon:Stethoscope },
-    { href:'/taramalar', label:'Sağlık Raporu (Operasyon)', icon:Activity },
+    { href:'/taramalar', label:'Sağlık Taramaları', icon:Activity },
   ]},
   { baslik:'Satış', linkler:[
     { href:'/teklifler', label:'Teklifler', icon:FileText },

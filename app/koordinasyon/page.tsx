@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { Plus, X, Check, Trash2, ChevronLeft, ChevronRight, ClipboardList, CalendarDays, Search, Grid3X3, Download } from 'lucide-react'
 import { csvIndir } from '@/lib/csvExport'
 
-const DURUM_RENK: any = { 'Planlandı':'var(--blue)', 'Tamamlandı':'var(--green)', 'Bekliyor':'var(--amber)', 'İptal':'var(--red)' }
+const DURUM_RENK: any = { 'Planlandı':'var(--blue)', 'Tamamlandı':'var(--green)', 'Bekliyor':'var(--amber)', 'İptal':'var(--red)', 'Gecikme':'#f97316' }
 const DURUMLAR = ['Planlandı','Bekliyor','Tamamlandı','İptal']
 const KATEGORILER = ['Saha ziyareti','Risk değerlendirme','Eğitim','Ölçüm','Sağlık taraması','Teklif','Diğer']
 const AYLAR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']
@@ -174,7 +174,7 @@ export default function Koordinasyon() {
       {/* BAŞLIK */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12, marginBottom:24 }}>
         <div>
-          <h1 style={{ fontFamily:'Sora,sans-serif', fontSize:26, fontWeight:700, letterSpacing:-0.5 }}>İSG Koordinasyon</h1>
+          <h1 style={{ fontFamily:'Sora,sans-serif', fontSize:26, fontWeight:700, letterSpacing:-0.5 }}>Görev Takibi</h1>
           <p style={{ color:'var(--text-dim)', fontSize:13, marginTop:2 }}>
             {rol === 'saha' ? `${mevcutPersonel?.ad_soyad} — sadece kendi görevlerin` : 'Tüm görev ve kararlar'}
           </p>
