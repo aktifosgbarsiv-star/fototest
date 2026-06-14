@@ -822,33 +822,61 @@ export default function Firmalar() {
             {sekme === 'katip' && duzenle && (
               <div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
-                  {[
-                    { key:'sozlesme_turu', label:'Tür', type:'select', opts:['İGU','İH','DSP','BHL'] },
-                    { key:'sozlesme_id', label:'Katip ID', type:'text', ph:'25821971' },
-                    { key:'gorevlendirilen_ad', label:'Görevlendirilen *', type:'text', ph:'Ad Soyad' },
-                    { key:'gorevlendirilen_tc', label:'TC No', type:'text', ph:'12345...' },
-                    { key:'sertifika_tipi', label:'Sertifika Tipi', type:'select', opts:['A Sınıfı','B Sınıfı','C Sınıfı','İH Sertifikası','DSP Sertifikası'] },
-                    { key:'sertifika_no', label:'Sertifika No', type:'text', ph:'İGU-406910' },
-                    { key:'calisma_suresi_dk', label:'Süre (dk/ay)', type:'number', ph:'70' },
-                    { key:'sozlesme_durumu', label:'Durum', type:'select', opts:['Devam Ediyor','Sona Erdi','Askıya Alındı'] },
-                    { key:'baslangic_tarihi', label:'Başlangıç', type:'date' },
-                    { key:'bitis_tarihi', label:'Bitiş', type:'date' },
-                  ].map((f:any) => (
-                    <div key={f.key}>
-                      <label style={lbl}>{f.label}</label>
-                      {f.type==='select'
-                        ? <select value={(katipForm as any)[f.key]} onChange={e=>setKatipForm({...katipForm,[f.key]:e.target.value})}>{f.opts.map((o:string)=><option key={o}>{o}</option>)}</select>
-                        : <input type={f.type||'text'} value={(katipForm as any)[f.key]} onChange={e=>setKatipForm({...katipForm,[f.key]:e.target.value})} placeholder={f.ph||''}/>
-                      }
-                    </div>
-                  ))}
+                  <div><label style={lbl}>Tür</label>
+                    <select value={katipForm.sozlesme_turu} onChange={e=>setKatipForm({...katipForm, sozlesme_turu:e.target.value, gorevlendirilen_ad:'', gorevlendirilen_tc:''})}>
+                      {['İGU','İH','DSP','BHL'].map(o=><option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div><label style={lbl}>Katip ID</label>
+                    <input value={katipForm.sozlesme_id} onChange={e=>setKatipForm({...katipForm, sozlesme_id:e.target.value})} placeholder="25821971"/>
+                  </div>
+                  <div><label style={lbl}>Görevlendirilen *</label>
+                    <select value={katipForm.gorevlendirilen_ad} onChange={e=>{
+                      const tur = katipForm.sozlesme_turu
+                      const p = personeller.find(x=>x.ad_soyad===e.target.value)
+                      setKatipForm({...katipForm, gorevlendirilen_ad: e.target.value, gorevlendirilen_tc: p?.tc||katipForm.gorevlendirilen_tc})
+                    }}>
+                      <option value="">Seçiniz...</option>
+                      {personeller.filter(p => {
+                        const tur = katipForm.sozlesme_turu
+                        if (tur==='İGU') return ['operasyon','saha','yonetici'].includes(p.rol)
+                        if (tur==='İH') return p.rol==='hekim'||p.rol==='yonetici'
+                        return true
+                      }).map(p=><option key={p.id} value={p.ad_soyad}>{p.ad_soyad}</option>)}
+                    </select>
+                  </div>
+                  <div><label style={lbl}>TC No</label>
+                    <input value={katipForm.gorevlendirilen_tc} onChange={e=>setKatipForm({...katipForm, gorevlendirilen_tc:e.target.value})} placeholder="12345..."/>
+                  </div>
+                  <div><label style={lbl}>Sertifika Tipi</label>
+                    <select value={katipForm.sertifika_tipi} onChange={e=>setKatipForm({...katipForm, sertifika_tipi:e.target.value})}>
+                      {['A Sınıfı','B Sınıfı','C Sınıfı','İH Sertifikası','DSP Sertifikası'].map(o=><option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div><label style={lbl}>Sertifika No</label>
+                    <input value={katipForm.sertifika_no} onChange={e=>setKatipForm({...katipForm, sertifika_no:e.target.value})} placeholder="İGU-406910"/>
+                  </div>
+                  <div><label style={lbl}>Süre (dk/ay)</label>
+                    <input type="number" value={katipForm.calisma_suresi_dk} onChange={e=>setKatipForm({...katipForm, calisma_suresi_dk:e.target.value})} placeholder="70"/>
+                  </div>
+                  <div><label style={lbl}>Durum</label>
+                    <select value={katipForm.sozlesme_durumu} onChange={e=>setKatipForm({...katipForm, sozlesme_durumu:e.target.value})}>
+                      {['Devam Ediyor','Sona Erdi','Askıya Alındı'].map(o=><option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div><label style={lbl}>Başlangıç</label>
+                    <input type="date" value={katipForm.baslangic_tarihi} onChange={e=>setKatipForm({...katipForm, baslangic_tarihi:e.target.value})}/>
+                  </div>
+                  <div><label style={lbl}>Bitiş</label>
+                    <input type="date" value={katipForm.bitis_tarihi} onChange={e=>setKatipForm({...katipForm, bitis_tarihi:e.target.value})}/>
+                  </div>
                 </div>
                 <button className="btn" style={{ width:'100%', justifyContent:'center', marginBottom:20 }} onClick={()=>katipKaydet(duzenle.id)} disabled={katipYukleniyor}>
                   + Sözleşme Ekle
                 </button>
                 <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                   {katipSozlesmeler.map(k=>(
-                    <div key={k.id} style={{ background:'var(--surface-2)', borderRadius:10, padding:'12px 14px', display:'flex', justifyContent:'space-between', gap:10, flexWrap:'wrap' }}>
+                    <div key={k.id} onClick={()=>setKatipForm({ sozlesme_id: k.sozlesme_id?.toString()||'', sozlesme_turu: k.sozlesme_turu||'İGU', gorevlendirilen_tc: k.gorevlendirilen_tc||'', gorevlendirilen_ad: k.gorevlendirilen_ad||'', sertifika_tipi: k.sertifika_tipi||'C Sınıfı', sertifika_no: k.sertifika_no||'', calisma_suresi_dk: k.calisma_suresi_dk?.toString()||'', baslangic_tarihi: k.baslangic_tarihi||'', bitis_tarihi: k.bitis_tarihi||'', sozlesme_durumu: k.sozlesme_durumu||'Devam Ediyor' })} style={{ background:'var(--surface-2)', borderRadius:10, padding:'12px 14px', display:'flex', justifyContent:'space-between', gap:10, flexWrap:'wrap', cursor:'pointer' }}>
                       <div>
                         <div style={{ fontWeight:700, fontSize:13, color:k.sozlesme_turu==='İGU'?'var(--blue)':k.sozlesme_turu==='İH'?'var(--green)':'var(--amber)' }}>{k.sozlesme_turu} — {k.gorevlendirilen_ad}</div>
                         <div style={{ fontSize:12, color:'var(--text-dim)', marginTop:3, display:'flex', flexWrap:'wrap', gap:'4px 12px' }}>
