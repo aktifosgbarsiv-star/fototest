@@ -268,6 +268,7 @@ export default function Firmalar() {
                   <td style={{ fontWeight:500 }}>
                     {f.unvan}
                     {f.isg_katip_unvan && f.isg_katip_unvan !== f.unvan && <div style={{ fontSize:11, color:'var(--text-faint)' }}>{f.isg_katip_unvan}</div>}
+                    {f.sgk_sicil && <div style={{ fontSize:10, color:'var(--text-faint)', fontFamily:'monospace', marginTop:1 }}>{f.sgk_sicil}</div>}
                   </td>
                   <td style={{ color:'var(--text-dim)' }}>{f.bolge||'—'}</td>
                   <td><span className="badge" style={{ background:`${TEHLIKE_RENK[f.tehlike_sinifi]}22`, color:TEHLIKE_RENK[f.tehlike_sinifi] }}>{f.tehlike_sinifi}</span></td>
