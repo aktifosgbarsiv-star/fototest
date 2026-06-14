@@ -18,6 +18,7 @@ export default function Ziyaretler() {
   const [personeller, setPersoneller] = useState<any[]>([])
   const [detayFirma, setDetayFirma] = useState<any>(null)
   const [detayAy, setDetayAy] = useState<number|null>(null)
+  const [ziyaretBilgi, setZiyaretBilgi] = useState<any>(null) // {firma, ayIdx, bilgi}
   const [form, setForm] = useState({ tarih: new Date().toISOString().slice(0,10), tur: 'İGU', notlar: '', fatura: false, operasyon_yapan: '', operasyon_yapan_id: '' })
   const [kayitYukleniyor, setKayitYukleniyor] = useState(false)
   const debounceRef = useRef<any>(null)
@@ -287,7 +288,10 @@ export default function Ziyaretler() {
                           {durum==='gelecek' ? (
                             <div style={{ width:16, height:16, border:'1px dashed var(--border)', borderRadius:3, margin:'0 auto', opacity:0.3 }}/>
                           ) : durum==='gidildi' ? (
-                            <div title={bilgi?.tarih?`${bilgi.tarih} · ${bilgi.tur}${bilgi.operasyon_yapan?' · '+bilgi.operasyon_yapan:''}`:''} style={{ width:18, height:18, background:'#22c55e', borderRadius:3, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            <div
+                              onClick={() => setZiyaretBilgi({ firma, ayIdx, bilgi })}
+                              title={bilgi?.tarih ? `${bilgi.tarih}` : ''}
+                              style={{ width:18, height:18, background:'#22c55e', borderRadius:3, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
                               <span style={{ color:'white', fontSize:9, fontWeight:700 }}>✓</span>
                             </div>
                           ) : (
@@ -328,6 +332,61 @@ export default function Ziyaretler() {
           </div>
         ))}
       </div>
+
+      {/* ZİYARET BİLGİ POPUP */}
+      {ziyaretBilgi && (
+        <div className="modal-overlay" onClick={() => setZiyaretBilgi(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth:360 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+              <h2 style={{ fontFamily:'Sora,sans-serif', fontSize:17, fontWeight:600, display:'flex', alignItems:'center', gap:8 }}>
+                <MapPin size={16} color="#22c55e"/> Ziyaret Detayı
+              </h2>
+              <button onClick={() => setZiyaretBilgi(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-dim)' }}><X size={20}/></button>
+            </div>
+
+            {/* Firma + Ay */}
+            <div style={{ background:'var(--surface-2)', borderRadius:10, padding:'12px 14px', marginBottom:14 }}>
+              <div style={{ fontWeight:600, fontSize:14, marginBottom:4 }}>{ziyaretBilgi.firma.unvan}</div>
+              <div style={{ fontSize:13, color:'var(--text-dim)' }}>{AYLAR_FULL[ziyaretBilgi.ayIdx]} {yil}</div>
+            </div>
+
+            {/* Bilgiler */}
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {[
+                ['📅 Tarih', ziyaretBilgi.bilgi?.tarih
+                  ? new Date(ziyaretBilgi.bilgi.tarih + 'T00:00:00').toLocaleDateString('tr-TR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
+                  : '—'],
+                ['👤 Ziyaret Eden', ziyaretBilgi.bilgi?.ziyaret_eden || ziyaretBilgi.firma.gorevli_igu || '—'],
+                ['🏥 Tür', ziyaretBilgi.bilgi?.tur || 'İGU'],
+                ['⚙️ Operasyon Yapan', ziyaretBilgi.bilgi?.operasyon_yapan || '—'],
+                ['📝 Notlar', ziyaretBilgi.bilgi?.notlar || '—'],
+              ].map(([k, v]) => (
+                <div key={k as string} style={{ display:'flex', gap:10, fontSize:13 }}>
+                  <span style={{ color:'var(--text-dim)', minWidth:130, flexShrink:0 }}>{k}</span>
+                  <span style={{ fontWeight:500 }}>{v}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Sil butonu - yazabilir ise */}
+            {yazabilir && (
+              <button
+                onClick={async () => {
+                  if (!confirm('Bu ziyaret kaydını silmek istiyor musunuz?')) return
+                  const ayKey = `${yil}-${String(ziyaretBilgi.ayIdx + 1).padStart(2, '0')}`
+                  const mevcut = { ...(ziyaretBilgi.firma.aylik_ziyaretler || {}) }
+                  delete mevcut[ayKey]
+                  await createClient().from('firmalar').update({ aylik_ziyaretler: mevcut }).eq('id', ziyaretBilgi.firma.id)
+                  setZiyaretBilgi(null)
+                  yukle()
+                }}
+                style={{ marginTop:16, width:'100%', padding:'10px', borderRadius:9, border:'1px solid var(--red)', background:'var(--red-soft)', color:'var(--red)', cursor:'pointer', fontSize:13, fontFamily:'inherit', fontWeight:600 }}>
+                🗑️ Ziyareti Sil
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {detayFirma && detayAy!==null && (
         <div className="modal-overlay" onClick={()=>{setDetayFirma(null);setDetayAy(null)}}>
