@@ -727,9 +727,18 @@ export default function Firmalar() {
                   {katipSozlesmeler.map(k=>(
                     <div key={k.id} style={{ background:'var(--surface-2)', borderRadius:10, padding:'12px 14px', display:'flex', justifyContent:'space-between', gap:10, flexWrap:'wrap' }}>
                       <div>
-                        <div style={{ fontWeight:600, fontSize:13, color:k.sozlesme_turu==='İGU'?'var(--blue)':k.sozlesme_turu==='İH'?'var(--green)':'var(--amber)' }}>{k.sozlesme_turu} — {k.gorevlendirilen_ad}</div>
-                        <div style={{ fontSize:12, color:'var(--text-faint)', marginTop:2 }}>{k.sertifika_no} · {k.calisma_suresi_dk}dk/ay · {k.sozlesme_durumu}</div>
-                        {k.baslangic_tarihi && <div style={{ fontSize:11, color:'var(--text-faint)' }}>{new Date(k.baslangic_tarihi+'T00:00:00').toLocaleDateString('tr-TR')} {k.bitis_tarihi ? '→ '+new Date(k.bitis_tarihi+'T00:00:00').toLocaleDateString('tr-TR') : ''}</div>}
+                        <div style={{ fontWeight:700, fontSize:13, color:k.sozlesme_turu==='İGU'?'var(--blue)':k.sozlesme_turu==='İH'?'var(--green)':'var(--amber)' }}>{k.sozlesme_turu} — {k.gorevlendirilen_ad}</div>
+                        <div style={{ fontSize:12, color:'var(--text-dim)', marginTop:3, display:'flex', flexWrap:'wrap', gap:'4px 12px' }}>
+                          {k.gorevlendirilen_tc && <span>TC: {k.gorevlendirilen_tc}</span>}
+                          {k.sozlesme_id && <span>Katip ID: {k.sozlesme_id}</span>}
+                          {k.sertifika_tipi && <span>{k.sertifika_tipi}</span>}
+                          {k.sertifika_no && <span>{k.sertifika_no}</span>}
+                        </div>
+                        <div style={{ fontSize:12, color:'var(--text-faint)', marginTop:2, display:'flex', gap:12, flexWrap:'wrap' }}>
+                          {k.calisma_suresi_dk && <span>{k.calisma_suresi_dk} dk/ay</span>}
+                          <span style={{ color: k.sozlesme_durumu==='Devam Ediyor'?'var(--green)':k.sozlesme_durumu==='Sona Erdi'?'var(--red)':'var(--amber)' }}>{k.sozlesme_durumu}</span>
+                        </div>
+                        {k.baslangic_tarihi && <div style={{ fontSize:11, color:'var(--text-faint)', marginTop:2 }}>{new Date(k.baslangic_tarihi+'T00:00:00').toLocaleDateString('tr-TR')} {k.bitis_tarihi ? '→ '+new Date(k.bitis_tarihi+'T00:00:00').toLocaleDateString('tr-TR') : '→ (açık)'}</div>}
                       </div>
                       <button onClick={()=>katipSil(k.id,duzenle.id)} style={{ background:'none', border:'none', color:'var(--text-faint)', cursor:'pointer', padding:4, fontSize:13 }}>🗑️</button>
                     </div>
