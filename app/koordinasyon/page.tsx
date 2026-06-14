@@ -286,7 +286,7 @@ export default function Koordinasyon() {
                           {(() => {
                             if (!g.son_tarih) return <span style={{ color:'var(--text-faint)' }}>—</span>
                             const gecikti = g.son_tarih < new Date().toISOString().slice(0,10) && !['Tamamlandı','İptal'].includes(g.durum)
-                            return <span style={{ color: gecikti ? 'var(--red)' : 'var(--text-faint)', fontWeight: gecikti ? 600 : 400 }}>
+                            return <span style={{ color: 'var(--text)', fontWeight: gecikti ? 600 : 400 }}>
                               {new Date(g.son_tarih + 'T00:00:00').toLocaleDateString('tr-TR')}
                             </span>
                           })()}
