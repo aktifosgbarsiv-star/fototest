@@ -289,7 +289,14 @@ export default function Arsiv() {
                     const satirBg = fi % 2 === 0 ? 'var(--surface)' : 'var(--surface-2)'
                     return (
                       <tr key={firma.id} style={{ borderBottom:'1px solid var(--border)' }}>
-                        <td style={{ padding:'8px 14px', position:'sticky', left:0, background:satirBg, zIndex:1, borderRight:'2px solid var(--border)', fontWeight:500 }}>{firma.unvan}</td>
+                        <td style={{ padding:'8px 14px', position:'sticky', left:0, background:satirBg, zIndex:1, borderRight:'2px solid var(--border)' }}>
+                          <div style={{ fontWeight:500 }}>{firma.unvan}</div>
+                          {(firma.gorevli_igu || firma.gorevli_ih) && (
+                            <div style={{ fontSize:10, color:'var(--text-faint)', marginTop:2 }}>
+                              {[firma.gorevli_igu, firma.gorevli_ih].filter(Boolean).join(' / ')}
+                            </div>
+                          )}
+                        </td>
                         {evraklar.map(e => {
                           const kayit = durumlar[firma.id]?.[e.id]
                           const tiklandi = !!kayit?.tiklandi
