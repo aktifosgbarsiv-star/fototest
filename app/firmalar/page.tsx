@@ -381,7 +381,7 @@ export default function Firmalar() {
                           <div style={{ color: v !== null ? 'var(--text)' : 'var(--text-faint)' }}>{v ?? '—'}</div>
                           {v !== null && (
                             <div onClick={(e) => toggleFatura(f, i, e)} title={kesildi ? 'Fatura kesildi' : 'Fatura kesilmedi'}
-                              style={{ marginTop:3, width:18, height:18, borderRadius:4, border:`1.5px solid ${kesildi ? '#22c55e' : 'var(--border)'}`, background: kesildi ? '#22c55e' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', cursor: kulRol==='muhasebe'||kulRol==='yonetici' ? 'pointer' : 'default', margin:'3px auto 0' }}>
+                              style={{ marginTop:3, width:18, height:18, borderRadius:4, border:`1.5px solid ${kesildi ? '#22c55e' : 'var(--border)'}`, background: kesildi ? '#22c55e' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', cursor: (['muhasebe','yonetici'] as string[]).includes(kulRol) ? 'pointer' : 'default', margin:'3px auto 0' }}>
                               {kesildi && <span style={{ color:'white', fontSize:10, fontWeight:700 }}>✓</span>}
                             </div>
                           )}
@@ -424,7 +424,7 @@ export default function Firmalar() {
                           <div style={{ color: v !== null ? 'var(--text)' : 'var(--text-faint)' }}>{v ?? '—'}</div>
                           {v !== null && (
                             <div onClick={(e) => toggleFatura(f, i, e)} title={kesildi ? 'Fatura kesildi' : 'Fatura kesilmedi'}
-                              style={{ marginTop:3, width:18, height:18, borderRadius:4, border:`1.5px solid ${kesildi ? '#22c55e' : 'var(--border)'}`, background: kesildi ? '#22c55e' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', cursor: kulRol==='muhasebe'||kulRol==='yonetici' ? 'pointer' : 'default', margin:'3px auto 0' }}>
+                              style={{ marginTop:3, width:18, height:18, borderRadius:4, border:`1.5px solid ${kesildi ? '#22c55e' : 'var(--border)'}`, background: kesildi ? '#22c55e' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', cursor: (['muhasebe','yonetici'] as string[]).includes(kulRol) ? 'pointer' : 'default', margin:'3px auto 0' }}>
                               {kesildi && <span style={{ color:'white', fontSize:10, fontWeight:700 }}>✓</span>}
                             </div>
                           )}
