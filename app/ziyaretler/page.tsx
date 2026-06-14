@@ -46,7 +46,7 @@ export default function Ziyaretler() {
   async function yukle() {
     setYukleniyor(true)
     let q = sb.from('firmalar')
-      .select('id, unvan, tehlike_sinifi, ih_periyot, gorevli_igu, gorevli_ih, aylik_ziyaretler')
+      .select('id, unvan, sgk_sicil, tehlike_sinifi, ih_periyot, gorevli_igu, gorevli_ih, aylik_ziyaretler')
       .eq('aktif', true)
       .not('ih_periyot', 'is', null)
       .order('unvan')
@@ -255,7 +255,10 @@ export default function Ziyaretler() {
                     <td style={{ padding:'7px 12px', position:'sticky', left:0, background:satirBg, zIndex:1, borderRight:'1px solid var(--border)' }}>
                       <div style={{ display:'flex', alignItems:'center', gap:7 }}>
                         <div style={{ width:7, height:7, borderRadius:'50%', flexShrink:0, background: atama==='kirmizi'?'#ef4444':atama==='sari'?'#f59e0b':'#22c55e' }}/>
-                        <span style={{ fontWeight:500 }}>{firma.unvan}</span>
+                        <div>
+                          <span style={{ fontWeight:500 }}>{firma.unvan}</span>
+                          {firma.sgk_sicil && <div style={{ fontSize:9, color:'var(--text-faint)', marginTop:1, fontFamily:'monospace' }}>{firma.sgk_sicil}</div>}
+                        </div>
                       </div>
                     </td>
                     <td style={{ textAlign:'center', padding:'7px 4px' }}>
