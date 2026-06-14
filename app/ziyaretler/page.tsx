@@ -396,7 +396,7 @@ export default function Ziyaretler() {
                 </div>
               ))}
             </div>
-            {yazabilir && (
+            {rol === 'yonetici' && (
               <button onClick={async () => {
                 if (!confirm('Bu ziyareti silmek istiyor musunuz?')) return
                 const ayKey = `${yil}-${String(ziyaretBilgi.ayIdx + 1).padStart(2, '0')}`
