@@ -62,7 +62,7 @@ export default function Saglik() {
     })
   }, [])
 
-  useEffect(() => { yukle() }, [aramaDebounced, hekimFiltre, odemeFiltre, basTarih, bitTarih, sayfa])
+  useEffect(() => { yukle() }, [aramaDebounced, hekimFiltre, odemeFiltre, basTarih, bitTarih, sayfa, sube])
 
   // İlk yüklemede firmalar ve personeller
   useEffect(() => {
