@@ -260,7 +260,7 @@ export default function Saglik() {
         <div style={{ overflowX: 'auto' }}>
           <table>
             <thead>
-              <tr><th>Tarih</th><th>Ad Soyad</th><th>D. Tarihi</th><th>Firma</th>{paraMi && <th>Ücret</th>}{paraMi && <th>Ödeme</th>}<th>Tetkikler</th><th></th></tr>
+              <tr><th>PR No</th><th>Tarih</th><th>Ad Soyad</th><th>Firma</th>{paraMi && <th>Ücret</th>}{paraMi && <th>Ödeme</th>}<th>Tetkikler</th><th></th></tr>
             </thead>
             <tbody>
               {yukleniyor
@@ -271,9 +271,9 @@ export default function Saglik() {
                     const aktifTetkik = Object.entries(k.tetkikler || {}).filter(([, v]) => v).map(([t]) => t)
                     return (
                       <tr key={k.id} style={{ cursor: 'pointer' }} onClick={() => setDetay(k)}>
+                        <td style={{ color: 'var(--text-dim)', fontWeight:600 }}>{k.pr_no || '—'}</td>
                         <td style={{ color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>{new Date(k.tarih + 'T00:00:00').toLocaleDateString('tr-TR')}</td>
                         <td style={{ fontWeight: 500 }}>{k.ad_soyad}</td>
-                        <td style={{ color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>{k.dogum_tarihi ? new Date(k.dogum_tarihi + 'T00:00:00').toLocaleDateString('tr-TR') : '—'}</td>
                         <td style={{ color: 'var(--text-dim)' }}>{k.firma || '—'}</td>
                         {paraMi && <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{tl(Number(k.ucret) || 0)}</td>}
                         {paraMi && <td><span className="badge" style={{ background: `${ODEME_RENK[k.odeme_sekli]}22`, color: ODEME_RENK[k.odeme_sekli] }}>{k.odeme_sekli}</span></td>}
