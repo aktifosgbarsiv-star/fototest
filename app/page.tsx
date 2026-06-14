@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Building2, HeartPulse, FileText, Wallet, TrendingUp, AlertTriangle, ArrowUpRight, MapPin, Bell, X, CalendarDays, ClipboardList } from 'lucide-react'
+import { Building2, HeartPulse, FileText, Wallet, TrendingUp, AlertTriangle, ArrowUpRight, MapPin, Bell, X, CalendarDays, ClipboardList, FolderArchive } from 'lucide-react'
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip, BarChart, Bar, Cell } from 'recharts'
 
 // Rollere göre hangi kartlar görünür
@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [ciroData, setCiroData] = useState<any[]>([])
   const [vadeData, setVadeData] = useState<any[]>([])
   const [uyarilar, setUyarilar] = useState<any[]>([])
+  const [aktiviteler, setAktiviteler] = useState<any[]>([])
   const [rol, setRol] = useState<string>('operasyon')
   const [yukleniyor, setYukleniyor] = useState(true)
 
@@ -44,7 +45,7 @@ export default function Dashboard() {
       const ayBit = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).toISOString().slice(0,10)
 
       const queries: any[] = []
-      if (izin.includes('firma')) queries.push(sb.from('firmalar').select('id', { count:'exact', head:true }))
+      if (izin.includes('firma')) queries.push(sb.from('firmalar').select('id', { count:'exact', head:true }).eq('aktif', true))
       else queries.push(Promise.resolve({ count: 0 }))
 
       if (izin.includes('hasta') || izin.includes('ciro')) queries.push(sb.from('hasta_kayitlari').select('ucret, tarih').gte('tarih', ayBas).lte('tarih', ayBit))
@@ -103,6 +104,14 @@ export default function Dashboard() {
       }
       setUyarilar(uyari.data || [])
 
+      // Aktivite akışı (son 10)
+      const { data: aktData } = await sb.from('firma_evrak_durumu')
+        .select('*, firmalar(unvan), evrak_tanimlari(ad)')
+        .not('tiklama_tarihi', 'is', null)
+        .order('tiklama_tarihi', { ascending: false })
+        .limit(8)
+      setAktiviteler(aktData || [])
+
       // Grafikler sadece yönetici + muhasebe
       if (izin.includes('ciro') || izin.includes('grafik')) {
         const aylar: Record<string, number> = {}
@@ -134,7 +143,7 @@ export default function Dashboard() {
   const tl = (n:number) => new Intl.NumberFormat('tr-TR', { maximumFractionDigits:0 }).format(n) + ' ₺'
 
   const TUM_KARTLAR = [
-    { key:'firma',      label:'Kayıtlı Firma',   val: stats.firma,              icon:Building2,    renk:'var(--blue)',   soft:'var(--blue-soft)',   href:'/firmalar' },
+    { key:'firma',      label:'Aktif Firma',      val: stats.firma,              icon:Building2,    renk:'var(--blue)',   soft:'var(--blue-soft)',   href:'/firmalar' },
     { key:'hasta',      label:'Hasta Kaydı',     val: stats.hasta,              icon:HeartPulse,   renk:'var(--green)',  soft:'var(--green-soft)',  href:'/saglik' },
     { key:'teklif',     label:'Bekleyen Teklif', val: stats.teklif,             icon:FileText,     renk:'var(--amber)',  soft:'var(--amber-soft)',  href:'/teklifler' },
     { key:'acikBakiye', label:'Açık Bakiye',     val: tl(stats.acikBakiye),     icon:Wallet,       renk:'var(--accent)', soft:'var(--accent-soft)', href:'/tahsilat' },
@@ -182,41 +191,38 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* BORÇ UYARILARI — yönetici + muhasebe */}
-      {izin.includes('uyari') && uyarilar.length > 0 && (
+      {/* AKTİVİTE AKIŞI */}
+      {aktiviteler.length > 0 && (
         <div style={{ marginBottom:20 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
-            <Bell size={15} color="var(--red)"/>
-            <span style={{ fontWeight:600, fontSize:14, color:'var(--red)' }}>Borç Uyarıları</span>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <FolderArchive size={15} color="var(--accent)"/>
+              <span style={{ fontWeight:600, fontSize:14 }}>Son Evrak Hareketleri</span>
+            </div>
+            <Link href="/arsiv" style={{ fontSize:12, color:'var(--accent)', textDecoration:'none' }}>Tümü →</Link>
           </div>
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            {uyarilar.map(u => (
-              <div key={u.id} className="card" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, padding:'12px 16px', borderColor:'rgba(248,113,113,0.25)', background:'var(--red-soft)', flexWrap:'wrap' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <AlertTriangle size={16} color="var(--red)"/>
-                  <div>
-                    <span style={{ fontWeight:600, fontSize:14 }}>{u.unvan}</span>
-                    <span style={{ fontSize:13, color:'var(--red)', marginLeft:8 }}>{tl(Number(u.vadesi_gecen_tutar))} · {u.gecen_gun_sayisi} gün</span>
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            {aktiviteler.map((a:any) => (
+              <div key={a.id} className="card" style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px' }}>
+                <div style={{ width:28, height:28, borderRadius:7, background:'var(--accent-soft)', color:'var(--accent)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:12, flexShrink:0 }}>
+                  {(a.tikleyen||'?').charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:12 }}>
+                    <span style={{ fontWeight:600 }}>{a.tikleyen||'—'}</span>
+                    <span style={{ color:'var(--text-faint)' }}> · </span>
+                    <span style={{ color:'var(--text-dim)' }}>{a.firmalar?.unvan||'—'}</span>
+                    <span style={{ color:'var(--text-faint)' }}> · </span>
+                    <span style={{ color:'var(--accent)', fontWeight:500 }}>{a.evrak_tanimlari?.ad||'—'}</span>
                   </div>
                 </div>
-                <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                  <span style={{ fontSize:11, background:'rgba(248,113,113,0.2)', color:'var(--red)', padding:'3px 8px', borderRadius:6, fontWeight:600 }}>{u.esik}+ gün</span>
-                  <Link href="/tahsilat" style={{ fontSize:12, color:'var(--red)', textDecoration:'none', fontWeight:500 }}>Tahsilat →</Link>
-                  <button onClick={()=>uyariKapat(u.id)} style={{ background:'none', border:'none', color:'var(--text-faint)', cursor:'pointer', padding:2 }}><X size={14}/></button>
+                <div style={{ fontSize:11, color:'var(--text-faint)', flexShrink:0 }}>
+                  {a.tiklama_tarihi ? new Date(a.tiklama_tarihi).toLocaleDateString('tr-TR', { day:'numeric', month:'short' }) : ''}
                 </div>
               </div>
             ))}
           </div>
         </div>
-      )}
-
-      {/* VADESİ GEÇEN — uyarı yoksa */}
-      {izin.includes('uyari') && stats.vadeGecen > 0 && uyarilar.length === 0 && (
-        <Link href="/tahsilat" className="card" style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 18px', marginBottom:20, textDecoration:'none', color:'inherit', borderColor:'rgba(248,113,113,0.25)', background:'var(--red-soft)' }}>
-          <AlertTriangle size={18} color="var(--red)"/>
-          <span style={{ flex:1, fontSize:14 }}><strong style={{ color:'var(--red)' }}>{tl(stats.vadeGecen)}</strong> vadesi geçmiş tahsilat</span>
-          <ArrowUpRight size={16} color="var(--red)"/>
-        </Link>
       )}
 
       {/* SAĞLIK RAPORU WIDGET */}
