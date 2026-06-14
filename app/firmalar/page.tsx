@@ -28,6 +28,9 @@ export default function Firmalar() {
   const [form, setForm] = useState<any>(bosForm())
   const [kulRol, setKulRol] = useState<string>('operasyon')
   const [donemTakip, setDonemTakip] = useState<any[]>([])
+  const [pasifModal, setPasifModal] = useState<any>(null) // { firma }
+  const [pasifNeden, setPasifNeden] = useState('')
+  const [aktifFiltre, setAktifFiltre] = useState<'aktif'|'pasif'|'hepsi'>('aktif')
 
   function bosKatipForm() {
     return { sozlesme_id:'', sozlesme_turu:'İGU', gorevlendirilen_tc:'', gorevlendirilen_ad:'', sertifika_tipi:'C Sınıfı', sertifika_no:'', calisma_suresi_dk:'', baslangic_tarihi:'', bitis_tarihi:'', sozlesme_durumu:'Devam Ediyor' }
@@ -82,7 +85,8 @@ export default function Firmalar() {
       gorevli_ih:'', ih_id:'', ih_atama_tarihi:'', ih_atama_durum:'yok',
       gorevli_dsp:'', dsp_id:'', bhl_atama:'', bhl_atama_durum:'yok', atama_aciklama:'', dr_sure:'', uzman_sure:'',
       ziyaret_periyodu:'', gorevli_ih_giden:'', ih_periyot:'',
-      kisi_basi_ucret:'', kisi_basi_ucret_yeni:'', paket_2808:'', paket_3000:'', paket_3434:''
+      kisi_basi_ucret:'', kisi_basi_ucret_yeni:'', paket_2808:'', paket_3000:'', paket_3434:'',
+      aktif: true, pasif_neden: ''
     }
   }
 
@@ -105,7 +109,7 @@ export default function Firmalar() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => yukle(), 400)
     return () => clearTimeout(debounceRef.current)
-  }, [arama, tehlikeFiltre, bolgeFiltre])
+  }, [arama, tehlikeFiltre, bolgeFiltre, aktifFiltre])
 
   async function yukle() {
     setYukleniyor(true)
@@ -113,6 +117,8 @@ export default function Firmalar() {
     if (arama) q = q.ilike('unvan', `%${arama}%`)
     if (tehlikeFiltre !== 'Hepsi') q = q.eq('tehlike_sinifi', tehlikeFiltre)
     if (bolgeFiltre !== 'Hepsi') q = q.eq('bolge', bolgeFiltre)
+    if (aktifFiltre === 'aktif') q = q.eq('aktif', true)
+    else if (aktifFiltre === 'pasif') q = q.eq('aktif', false)
     const { data, error } = await q
     if (error) { setHata('Yüklenemedi'); setYukleniyor(false); return }
     setFirmalar(data || [])
@@ -159,6 +165,20 @@ export default function Firmalar() {
       setModal(false)
     }
     setForm(bosForm()); yukle()
+  }
+
+
+  async function pasifYap(firma: any, neden: string) {
+    await sb.from('firmalar').update({ aktif: false, pasif_neden: neden }).eq('id', firma.id)
+    setPasifModal(null)
+    setPasifNeden('')
+    yukle()
+  }
+
+  async function aktifYap(firma: any) {
+    if (!confirm(`"${firma.unvan}" tekrar aktif edilsin mi?`)) return
+    await sb.from('firmalar').update({ aktif: true, pasif_neden: null }).eq('id', firma.id)
+    yukle()
   }
 
   async function sil(id: string) {
@@ -229,6 +249,8 @@ export default function Firmalar() {
       gorevli_ih_giden: f.gorevli_ih_giden||'', ih_periyot: f.ih_periyot||'',
       kisi_basi_ucret: f.kisi_basi_ucret?.toString()||'',
       kisi_basi_ucret_yeni: f.kisi_basi_ucret_yeni?.toString()||'',
+      aktif: f.aktif !== false,
+      pasif_neden: f.pasif_neden||'',
       paket_2808: f.paket_2808?.toString()||'', paket_3000: f.paket_3000?.toString()||'', paket_3434: f.paket_3434?.toString()||''
     })
   }
@@ -276,7 +298,14 @@ export default function Firmalar() {
           <h1 style={{ fontFamily:'Sora,sans-serif', fontSize:28, fontWeight:700, letterSpacing:-0.5 }}>Firmalar</h1>
           <p style={{ color:'var(--text-dim)', fontSize:14, marginTop:4 }}>{filtreli.length} firma</p>
         </div>
-        <button className="btn" onClick={()=>{ setDuzenle(null); setForm(bosForm()); setSekme('temel'); setModal(true) }}><Plus size={18}/> Yeni Firma</button>
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          {['aktif','pasif','hepsi'].map(f => (
+            <button key={f} onClick={()=>setAktifFiltre(f as any)} style={{ padding:'7px 14px', borderRadius:8, fontSize:12, cursor:'pointer', fontFamily:'inherit', border:`1px solid ${aktifFiltre===f?'var(--accent)':'var(--border)'}`, background: aktifFiltre===f?'var(--accent-soft)':'var(--surface)', color: aktifFiltre===f?'var(--accent)':'var(--text-dim)', fontWeight: aktifFiltre===f?600:400, textTransform:'capitalize' }}>
+              {f==='aktif'?'Aktif':f==='pasif'?'Pasif':'Hepsi'}
+            </button>
+          ))}
+          <button className="btn" onClick={()=>{ setDuzenle(null); setForm(bosForm()); setSekme('temel'); setModal(true) }}><Plus size={18}/> Yeni Firma</button>
+        </div>
       </div>
 
       <div style={{ display:'flex', gap:12, alignItems:'flex-start', background:'var(--blue-soft)', border:'1px solid rgba(99,102,241,0.1)', borderRadius:12, padding:'14px 16px', marginBottom:20 }}>
@@ -333,7 +362,7 @@ export default function Firmalar() {
               {yukleniyor ? <tr><td colSpan={11} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Yükleniyor...</td></tr>
                : filtreli.length === 0 ? <tr><td colSpan={11} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Firma yok</td></tr>
                : filtreli.map(f => (
-                <tr key={f.id} style={{ cursor:'pointer' }} onClick={()=>setDetay(f)}>
+                <tr key={f.id} style={{ cursor:'pointer', opacity: f.aktif===false ? 0.5 : 1 }} onClick={()=>setDetay(f)}>
                   {kulRol === 'muhasebe' ? (() => {
                     const fark = f.aylik_fark ?? null
                     const sonAy = [f.haziran_kisi, f.mayis_kisi, f.nisan_kisi, f.mart_kisi, f.subat_kisi, f.ocak_kisi].find(v => v !== null && v !== undefined) ?? 0
@@ -413,6 +442,11 @@ export default function Firmalar() {
                   <td onClick={e=>e.stopPropagation()}>
                     <div style={{ display:'flex', gap:4 }}>
                       <button onClick={()=>duzenleAc(f)} style={{ background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer', padding:4 }}><Pencil size={14}/></button>
+                      {kulRol === 'yonetici' && (
+                        f.aktif !== false
+                          ? <button onClick={(e)=>{ e.stopPropagation(); setPasifModal(f); setPasifNeden('') }} title="Pasife Al" style={{ background:'none', border:'none', color:'var(--amber)', cursor:'pointer', padding:4, fontSize:11, fontWeight:600 }}>Pasif</button>
+                          : <button onClick={(e)=>{ e.stopPropagation(); aktifYap(f) }} title="Aktife Al" style={{ background:'none', border:'none', color:'var(--green)', cursor:'pointer', padding:4, fontSize:11, fontWeight:600 }}>Aktif</button>
+                      )}
                       <button onClick={()=>sil(f.id)} style={{ background:'none', border:'none', color:'var(--text-faint)', cursor:'pointer', padding:4 }}><Trash2 size={14}/></button>
                     </div>
                   </td>
@@ -984,6 +1018,26 @@ export default function Firmalar() {
             <div style={{ display:'flex', gap:10, marginTop:20 }}>
               <button className="btn-ghost btn" style={{ flex:1, justifyContent:'center' }} onClick={()=>{ setModal(false); setDuzenle(null) }}>İptal</button>
               <button className="btn" style={{ flex:1, justifyContent:'center' }} onClick={kaydet}>{duzenle?'Güncelle':'Kaydet'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Pasife Alma Modalı */}
+      {pasifModal && (
+        <div className="modal-overlay" onClick={()=>setPasifModal(null)}>
+          <div className="modal" style={{ maxWidth:420 }} onClick={e=>e.stopPropagation()}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+              <h3 style={{ fontWeight:700, fontSize:16 }}>Firmayı Pasife Al</h3>
+              <button onClick={()=>setPasifModal(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-dim)' }}><X size={20}/></button>
+            </div>
+            <p style={{ fontSize:13, color:'var(--text-dim)', marginBottom:16 }}><strong>{pasifModal.unvan}</strong> pasife alınacak.</p>
+            <div style={{ marginBottom:20 }}>
+              <label style={{ fontSize:12, color:'var(--text-dim)', display:'block', marginBottom:6 }}>Pasife Alma Sebebi (isteğe bağlı)</label>
+              <textarea value={pasifNeden} onChange={e=>setPasifNeden(e.target.value)} rows={3} placeholder="Örn: Sözleşme bitti, firma kapandı..." style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface-2)', color:'var(--text)', fontSize:13, fontFamily:'inherit', resize:'vertical', boxSizing:'border-box' }}/>
+            </div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={()=>setPasifModal(null)} className="btn-ghost btn" style={{ flex:1, justifyContent:'center' }}>İptal</button>
+              <button onClick={()=>pasifYap(pasifModal, pasifNeden)} style={{ flex:1, padding:'10px', borderRadius:8, background:'var(--amber)', border:'none', color:'white', cursor:'pointer', fontWeight:700, fontSize:13, fontFamily:'inherit' }}>Pasife Al</button>
             </div>
           </div>
         </div>
