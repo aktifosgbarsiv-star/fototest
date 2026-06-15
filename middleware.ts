@@ -2,13 +2,25 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 const ROL_ERISIM: Record<string, string[]> = {
-  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv'],
+  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site'],
   operasyon: ['/','/ara','/firmalar','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
   hekim:     ['/','/saglik','/hekim','/koordinasyon','/arsiv'],
   satis:     ['/','/teklifler','/malzemeler','/tedarikciler'],
   muhasebe:  ['/','/tahsilat','/saglik','/fatura'],
   saha:      ['/','/koordinasyon','/ziyaretler','/arsiv'],
 }
+
+// Public sayfalar — auth gerektirmez
+const PUBLIC_PATHS = [
+  '/giris',
+  '/kurumsal',
+  '/ekibimiz',
+  '/hizmetlerimiz',
+  '/egitimler',
+  '/referanslar',
+  '/yazilarimiz',
+  '/iletisim',
+]
 
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: req })
@@ -33,12 +45,24 @@ export async function middleware(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   const path = req.nextUrl.pathname
-  const acik = path === '/giris' || path.startsWith('/_next') || path.startsWith('/api')
 
-  if (!user && !acik) return NextResponse.redirect(new URL('/giris', req.url))
+  const isStatic = path.startsWith('/_next') || path.startsWith('/api') || path.startsWith('/public')
+  const isPublicPage = path === '/' || PUBLIC_PATHS.some(p => path === p || path.startsWith(p + '/'))
+
+  // Static & API — geç
+  if (isStatic) return res
+
+  // Public sayfalar — herkes görebilir
+  if (isPublicPage) return res
+
+  // Korumalı sayfa — login gerekli
+  if (!user) return NextResponse.redirect(new URL('/giris', req.url))
+
+  // Login sayfasına gelen login'li kullanıcı → ana sayfaya
   if (user && path === '/giris') return NextResponse.redirect(new URL('/', req.url))
 
-  if (user && !acik) {
+  // Rol kontrolü
+  if (user) {
     const { data: personel } = await supabase.from('personeller').select('rol').eq('id', user.id).single()
     const rol = personel?.rol || 'operasyon'
     const izinli = ROL_ERISIM[rol] || ROL_ERISIM.operasyon

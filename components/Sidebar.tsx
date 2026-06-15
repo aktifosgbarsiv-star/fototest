@@ -8,7 +8,7 @@ import { UserCog, LogOut, LayoutDashboard, Building2, HeartPulse, FileText, Wall
 const ROL_AD: any = { yonetici:'Yönetici', operasyon:'Operasyon', hekim:'Hekim', satis:'Satış', muhasebe:'Muhasebe', saha:'Saha Uzmanı' }
 
 const ERISIM: any = {
-  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv'],
+  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site'],
   operasyon: ['/','/firmalar','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
   hekim:     ['/','/saglik','/hekim','/koordinasyon','/arsiv'],
   satis:     ['/','/teklifler','/malzemeler','/tedarikciler'],
@@ -40,6 +40,9 @@ const GRUPLAR = [
   { baslik:'Finans & İdari', linkler:[
     { href:'/tahsilat', label:'Tahsilat', icon:Wallet },
     { href:'/idari', label:'İdari İşler', icon:ClipboardList },
+  ]},
+  { baslik:'Web Sitesi', linkler:[
+    { href:'/site', label:'Site Yönetimi', icon:LayoutDashboard },
   ]},
   { baslik:'Yönetim', linkler:[
     { href:'/fatura', label:'Fatura Takibi', icon:FileText },
