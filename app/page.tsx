@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient as createServerSupabase } from '@supabase/supabase-js'
 import SiteNav from '@/components/site/SiteNav'
 import SiteFooter from '@/components/site/SiteFooter'
+import HeroSlider from '@/components/site/HeroSlider'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,48 +44,7 @@ export default async function AnaSayfa() {
     <div style={{ background: '#08080f', minHeight: '100vh', color: '#e8e8f0', fontFamily: "'Inter', -apple-system, system-ui, sans-serif" }}>
       <SiteNav />
 
-      {/* HERO */}
-      <section style={{ padding: '120px 32px 100px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{
-          position: 'absolute', top: -200, left: '50%', transform: 'translateX(-50%)',
-          width: 800, height: 600,
-          background: 'radial-gradient(ellipse at center, rgba(99,102,241,.1) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: 'rgba(99,102,241,.1)', border: '1px solid rgba(99,102,241,.2)',
-          borderRadius: 100, padding: '6px 16px', fontSize: 12, fontWeight: 500, color: '#a5b4fc',
-          marginBottom: 32,
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1', display: 'inline-block' }} />
-          6331 Sayılı Kanun Kapsamında Yetkili OSGB
-        </div>
-        <h1 style={{
-          fontSize: 'clamp(36px, 6vw, 60px)', fontWeight: 800, lineHeight: 1.1,
-          letterSpacing: -2, color: '#fff', maxWidth: 800, margin: '0 auto 24px',
-        }}>
-          İş Sağlığı ve{' '}
-          <span style={{ background: 'linear-gradient(135deg, #6366f1, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Güvenliğinde
-          </span>{' '}
-          Güvenilir Ortağınız
-        </h1>
-        <p style={{ fontSize: 18, color: '#9b9bb8', maxWidth: 520, margin: '0 auto 40px', lineHeight: 1.7 }}>
-          {s('aciklama', '2014\'ten bu yana işyerlerinizde sağlıklı ve güvenli çalışma ortamı için uzman ekibimizle yanınızdayız.')}
-        </p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/iletisim" style={{
-            padding: '14px 28px', borderRadius: 10, background: '#6366f1', color: '#fff',
-            fontSize: 15, fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8,
-          }}>Ücretsiz Teklif Al →</Link>
-          <Link href="/hizmetlerimiz" style={{
-            padding: '14px 28px', borderRadius: 10,
-            border: '1px solid rgba(255,255,255,.1)', color: '#c8c8e0',
-            fontSize: 15, fontWeight: 600, textDecoration: 'none',
-          }}>Hizmetleri İncele</Link>
-        </div>
-      </section>
+      <HeroSlider />
 
       {/* STATS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: 'rgba(255,255,255,.05)', borderTop: '1px solid rgba(255,255,255,.05)', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
