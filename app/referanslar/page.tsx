@@ -20,23 +20,25 @@ export default async function Referanslar() {
         </div>
         <h1 style={{ fontSize: 'clamp(32px,5vw,52px)', fontWeight: 800, letterSpacing: -1.5, color: '#fff', marginBottom: 16, lineHeight: 1.1 }}>Güven Duyulan Markalar</h1>
         <p style={{ fontSize: 18, color: '#6b6b88', maxWidth: 560, lineHeight: 1.7, marginBottom: 64 }}>
-          Yüzlerce kuruma verdiğimiz kesintisiz hizmetle güven inşa ettik.
+          Afyon ve çevre illerinde 500'den fazla kuruma verdiğimiz kesintisiz hizmetle güven inşa ettik.
         </p>
-        {referanslar.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0', color: '#4a4a68' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🏢</div>
-            <p>Referans bilgileri panelden eklenebilir.</p>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 16 }}>
-            {referanslar.map((r: any) => (
-              <div key={r.id} style={{ background: '#0e0e1c', border: '1px solid rgba(255,255,255,.06)', borderRadius: 16, padding: '28px 20px', textAlign: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 20 }}>
+          {referanslar.map((r: any) => (
+            <div key={r.id} style={{
+              background: '#0e0e1c', border: '1px solid rgba(255,255,255,.06)',
+              borderRadius: 16, padding: 24, textAlign: 'center',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
+            }}>
+              {r.logo_url ? (
+                <img src={r.logo_url} alt={r.firma_adi}
+                  style={{ width: '100%', maxHeight: 80, objectFit: 'contain', filter: 'grayscale(100%) brightness(1.5)', opacity: 0.8 }} />
+              ) : (
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#c0c0e0' }}>{r.firma_adi}</div>
-                {r.sektor && <div style={{ fontSize: 12, color: '#5d5d7a', marginTop: 6 }}>{r.sektor}</div>}
-              </div>
-            ))}
-          </div>
-        )}
+              )}
+              <div style={{ fontSize: 12, color: '#5d5d7a' }}>{r.sektor}</div>
+            </div>
+          ))}
+        </div>
       </div>
       <SiteFooter />
     </div>
