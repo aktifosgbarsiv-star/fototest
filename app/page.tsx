@@ -131,10 +131,13 @@ export default async function AnaSayfa() {
               🔍 Hemen Sorgula →
             </Link>
           </div>
-          <div style={{ background:'#0e0e1c', border:'1px solid rgba(245,194,0,.1)', borderRadius:20, overflow:'hidden', aspectRatio:'4/3' }}>
-            <div style={{ background:'rgba(245,194,0,.08)', padding:'12px 20px', borderBottom:'1px solid rgba(245,194,0,.1)', fontSize:13, fontWeight:700, color:SARI }}>🏭 NACE Kodu Sorgulama</div>
-            <iframe src="https://aktifosgb.com.tr/nace/" style={{ width:'100%', height:'calc(100% - 45px)', border:'none', background:'#fff' }} title="NACE Sorgulama" />
-          </div>
+          <div style={{ background:'#0e0e1c', border:'1px solid rgba(245,194,0,.1)', borderRadius:20, overflow:'hidden', aspectRatio:'4/3', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, padding:32 }}>
+              <div style={{ fontSize:48 }}>🔍</div>
+              <p style={{ fontSize:15, color:'#9b9bb8', textAlign:'center', lineHeight:1.6 }}>Tam NACE kodu sorgulama aracı için aşağıdaki butona tıklayın</p>
+              <a href="/tehlike-sinifi" style={{ padding:'12px 28px', borderRadius:10, background:'linear-gradient(135deg,#f5c200,#e6a800)', color:'#0a0a0f', fontSize:14, fontWeight:800, textDecoration:'none' }}>
+                Tehlike Sınıfı Sorgula →
+              </a>
+            </div>
         </div>
       </section>
 
