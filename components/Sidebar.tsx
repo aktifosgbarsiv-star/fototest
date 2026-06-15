@@ -43,6 +43,7 @@ const GRUPLAR = [
   ]},
   { baslik:'Web Sitesi', linkler:[
     { href:'/site', label:'Site Yönetimi', icon:LayoutDashboard },
+    { href:'/site/ramak-kala', label:'Ramak Kala', icon:LayoutDashboard },
   ]},
   { baslik:'Yönetim', linkler:[
     { href:'/fatura', label:'Fatura Takibi', icon:FileText },
