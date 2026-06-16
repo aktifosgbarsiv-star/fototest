@@ -1,17 +1,18 @@
 'use client'
+import { useState, useEffect } from 'react'
 import SiteNav from '@/components/site/SiteNav'
 import SiteFooter from '@/components/site/SiteFooter'
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 export const dynamic = 'force-dynamic'
 
 async function getYazilar() {
-  const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  const sb = createClient()
   const { data } = await sb.from('site_yazilar').select('*').eq('yayinda', true).order('yayinlandi_at', { ascending: false })
   return data || []
 }
 
-export default async function Yazilarimiz() {
+export default function Yazilarimiz() {
   const yazilar = await getYazilar()
   return (
     <div style={{ background: '#f8f8f6', minHeight: '100vh', width: '100%', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
