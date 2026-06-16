@@ -5,16 +5,23 @@ import { useRouter } from 'next/navigation'
 
 export default function PortalGiris() {
   const [sicil, setSicil] = useState('')
+  const [sifre, setSifre] = useState('')
   const [yukleniyor, setYukleniyor] = useState(false)
   const [hata, setHata] = useState('')
   const router = useRouter()
 
   async function girisYap() {
-    if (!sicil.trim()) { setHata('SGK sicil numarası giriniz.'); return }
+    if (!sicil.trim() || !sifre.trim()) {
+      setHata('Lütfen tüm alanları doldurun.')
+      return
+    }
+    if (sicil.trim() !== sifre.trim()) {
+      setHata('Sicil numarası veya şifre hatalı.')
+      return
+    }
     setYukleniyor(true); setHata('')
     const sb = createClient()
-    
-    // SGK sicil numarası ile firmayı bul
+
     const { data: firma, error } = await sb
       .from('firmalar')
       .select('id, unvan, sgk_sicil')
@@ -23,12 +30,11 @@ export default function PortalGiris() {
       .single()
 
     if (error || !firma) {
-      setHata('SGK sicil numarası bulunamadı. Lütfen kontrol edin.')
+      setHata('Sicil numarası veya şifre hatalı.')
       setYukleniyor(false)
       return
     }
 
-    // Session'a firma bilgisini kaydet
     sessionStorage.setItem('portal_firma', JSON.stringify(firma))
     router.push('/portal/dosyalar')
   }
@@ -40,14 +46,11 @@ export default function PortalGiris() {
       fontFamily: "'Inter',-apple-system,system-ui,sans-serif", padding: 24,
     }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
-        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <img src="/logo.png"
-            alt="Aktif OSGB" style={{ height: 52, objectFit: 'contain' }} />
+          <img src="/logo.png" alt="Aktif OSGB" style={{ height: 52, objectFit: 'contain' }} />
           <p style={{ fontSize: 13, color: '#5d5d7a', marginTop: 12 }}>Firma Portali</p>
         </div>
 
-        {/* Kart */}
         <div style={{
           background: '#0e0e1c', border: '1px solid rgba(245,194,0,.15)',
           borderRadius: 20, padding: '36px 32px',
@@ -60,7 +63,8 @@ export default function PortalGiris() {
             SGK sicil numaranız hem kullanıcı adınız hem de şifrenizdir.
           </p>
 
-          <div style={{ marginBottom: 16 }}>
+          {/* Sicil No */}
+          <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#8b8ba8', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 8 }}>
               SGK Sicil Numarası
             </label>
@@ -68,8 +72,27 @@ export default function PortalGiris() {
               type="text"
               value={sicil}
               onChange={e => setSicil(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && girisYap()}
               placeholder="Sicil numaranızı girin"
+              style={{
+                width: '100%', background: 'rgba(255,255,255,.04)',
+                border: '1px solid rgba(245,194,0,.2)', borderRadius: 10,
+                padding: '13px 16px', color: '#e0e0f0', fontSize: 15,
+                fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          {/* Şifre */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#8b8ba8', textTransform: 'uppercase', letterSpacing: .5, marginBottom: 8 }}>
+              Şifre
+            </label>
+            <input
+              type="password"
+              value={sifre}
+              onChange={e => setSifre(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && girisYap()}
+              placeholder="Şifrenizi girin"
               style={{
                 width: '100%', background: 'rgba(255,255,255,.04)',
                 border: '1px solid rgba(245,194,0,.2)', borderRadius: 10,
