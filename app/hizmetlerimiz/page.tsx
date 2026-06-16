@@ -12,7 +12,8 @@ async function getHizmetler() {
 }
 
 export default function Hizmetlerimiz() {
-  const hizmetler = await getHizmetler()
+  const [hizmetler, setHizmetler] = useState<any>(null)
+  useEffect(() => { getHizmetler().then(setHizmetler) }, [])
   return (
     <div style={{ background: '#f8f8f6', minHeight: '100vh', width: '100%', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
       <SiteNav />
