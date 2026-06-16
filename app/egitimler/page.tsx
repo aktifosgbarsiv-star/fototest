@@ -12,7 +12,7 @@ async function getEgitimler() {
 }
 
 export default function Egitimler() {
-  const [egitimler, setEgitimler] = useState<any>(null)
+  const [egitimler, setEgitimler] = useState<any>([])
   useEffect(() => { getEgitimler().then(setEgitimler) }, [])
   return (
     <div style={{ background: '#f8f8f6', minHeight: '100vh', width: '100%', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
@@ -26,7 +26,7 @@ export default function Egitimler() {
           Yasal zorunluluklar kapsamında çalışanlarınızı eğitiyor, sertifikalandırıyoruz.
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 20 }}>
-          {egitimler.map((e: any, i: number) => (
+          {(egitimler || []).map((e: any, i: number) => (
             <div key={e.id} style={{ background: '#ffffff', border: '1px solid #e8e8ed', borderRadius: 20, padding: 32 }}>
               <div style={{ fontSize: 48, fontWeight: 900, color: 'rgba(99,102,241,.15)', lineHeight: 1, marginBottom: 20 }}>{String(i+1).padStart(2,'0')}</div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a2e', marginBottom: 12 }}>{e.baslik}</h2>
