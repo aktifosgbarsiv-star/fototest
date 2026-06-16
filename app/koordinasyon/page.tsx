@@ -50,7 +50,7 @@ export default function Koordinasyon() {
     setYukleniyor(true)
     const rol = mevcutPersonel?.rol || 'operasyon'
     let q = sb.from('gorevler').select('*, personeller(ad_soyad), firmalar(unvan)').order('tarih', { ascending: false })
-    if (rol === 'saha' && mevcutPersonel?.id) q = q.eq('uzman_id', mevcutPersonel.id)
+    if (rol !== 'yonetici' && mevcutPersonel?.id) q = q.eq('uzman_id', mevcutPersonel.id)
     if (durumFiltre !== 'Hepsi') q = q.eq('durum', durumFiltre)
 
     const [gRes, pRes, fRes, zRes] = await Promise.all([
