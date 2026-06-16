@@ -5,8 +5,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 const BAKIM_MODU = false
 
 const ROL_ERISIM: Record<string, string[]> = {
-  yonetici:  ['/firmalar','/ara','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site'],
-  operasyon: ['/firmalar','/ara','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
+  yonetici:  ['/dashboard','/firmalar','/ara','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site'],
+  operasyon: ['/dashboard','/firmalar','/ara','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
   hekim:     ['/saglik','/hekim','/koordinasyon','/arsiv'],
   satis:     ['/teklifler','/malzemeler','/tedarikciler'],
   muhasebe:  ['/tahsilat','/saglik','/fatura'],
@@ -14,8 +14,8 @@ const ROL_ERISIM: Record<string, string[]> = {
 }
 
 const ROL_ANA_SAYFA: Record<string, string> = {
-  yonetici:  '/firmalar',
-  operasyon: '/firmalar',
+  yonetici:  '/dashboard',
+  operasyon: '/dashboard',
   hekim:     '/saglik',
   satis:     '/teklifler',
   muhasebe:  '/tahsilat',
@@ -24,7 +24,7 @@ const ROL_ANA_SAYFA: Record<string, string> = {
 
 // Panel sayfaları — /arsiv eklendi
 const PANEL_SAYFALAR = [
-  '/firmalar','/ara','/saglik','/teklifler','/tahsilat','/koordinasyon',
+  '/dashboard','/firmalar','/ara','/saglik','/teklifler','/tahsilat','/koordinasyon',
   '/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar',
   '/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site'
 ]
