@@ -12,7 +12,7 @@ async function getHizmetler() {
 }
 
 export default function Hizmetlerimiz() {
-  const [hizmetler, setHizmetler] = useState<any>(null)
+  const [hizmetler, setHizmetler] = useState<any>([])
   useEffect(() => { getHizmetler().then(setHizmetler) }, [])
   return (
     <div style={{ background: '#f8f8f6', minHeight: '100vh', width: '100%', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
@@ -26,7 +26,7 @@ export default function Hizmetlerimiz() {
           6331 sayılı İş Sağlığı ve Güvenliği Kanunu kapsamında işletmenize özel, eksiksiz hizmet paketi.
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 20 }}>
-          {hizmetler.map((h: any) => (
+          {(hizmetler || []).map((h: any) => (
             <div key={h.id} style={{ background: '#ffffff', border: '1px solid #e8e8ed', borderRadius: 20, padding: 32 }}>
               <div style={{ width: 52, height: 52, borderRadius: 12, background: 'rgba(99,102,241,.12)', border: '1px solid rgba(99,102,241,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 20 }}>{h.ikon}</div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a2e', marginBottom: 12 }}>{h.baslik}</h2>
