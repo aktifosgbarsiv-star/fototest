@@ -8,12 +8,12 @@ import { UserCog, LogOut, LayoutDashboard, Building2, HeartPulse, FileText, Wall
 const ROL_AD: any = { yonetici:'Yönetici', operasyon:'Operasyon', hekim:'Hekim', satis:'Satış', muhasebe:'Muhasebe', saha:'Saha Uzmanı' }
 
 const ERISIM: any = {
-  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site','/site/ramak-kala'],
-  operasyon: ['/','/firmalar','/ara','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
-  hekim:     ['/','/saglik','/hekim','/koordinasyon','/arsiv'],
-  satis:     ['/','/teklifler','/malzemeler','/tedarikciler'],
-  muhasebe:  ['/','/tahsilat','/saglik','/fatura'],
-  saha:      ['/','/koordinasyon','/ziyaretler','/arsiv'],
+  yonetici:  ['/dashboard','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site','/site/ramak-kala'],
+  operasyon: ['/dashboard','/firmalar','/ara','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
+  hekim:     ['/dashboard','/saglik','/hekim','/koordinasyon','/arsiv'],
+  satis:     ['/dashboard','/teklifler','/malzemeler','/tedarikciler'],
+  muhasebe:  ['/dashboard','/tahsilat','/saglik','/fatura'],
+  saha:      ['/dashboard','/koordinasyon','/ziyaretler','/arsiv'],
 }
 
 const GRUPLAR = [
