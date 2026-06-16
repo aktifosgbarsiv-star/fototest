@@ -7,9 +7,8 @@ import { UserCog, Menu, X, LogOut, LayoutDashboard, Building2, HeartPulse, FileT
 
 const ROL_AD: any = { yonetici:'Yönetici', operasyon:'Operasyon', hekim:'Hekim', satis:'Satış', muhasebe:'Muhasebe', saha:'Saha Uzmanı' }
 
-// Middleware ile tam uyumlu
 const ERISIM: any = {
-  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site'],
+  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site','/site/ramak-kala'],
   operasyon: ['/','/firmalar','/ara','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
   hekim:     ['/','/saglik','/hekim','/koordinasyon','/arsiv'],
   satis:     ['/','/teklifler','/malzemeler','/tedarikciler'],
@@ -37,6 +36,7 @@ const TUM_LINKLER = [
   { href:'/personeller', label:'Personel & Yetkiler', icon:UserCog },
   { href:'/eksik-veriler', label:'Eksik Veriler', icon:AlertTriangle },
   { href:'/site', label:'Site Yönetimi', icon:LayoutDashboard },
+  { href:'/site/ramak-kala', label:'Ramak Kala (Site)', icon:LayoutDashboard },
 ]
 
 export default function MobileTopbar() {
@@ -65,7 +65,7 @@ export default function MobileTopbar() {
   const rol = personel?.rol || 'operasyon'
   const izinli = ERISIM[rol] || ERISIM.operasyon
   const linkler = TUM_LINKLER.filter(l => izinli.includes(l.href))
-  const aktif = TUM_LINKLER.find(l => l.href === pathname)
+  const aktif = TUM_LINKLER.find(l => l.href === pathname) || TUM_LINKLER.find(l => l.href !== '/' && pathname.startsWith(l.href + '/'))
 
   return (
     <>
@@ -145,7 +145,7 @@ export default function MobileTopbar() {
         <nav style={{ flex:1, overflowY:'auto', padding:'8px 10px' }}>
           {linkler.map(l => {
             const Icon = l.icon
-            const isAktif = pathname === l.href
+            const isAktif = pathname === l.href || (l.href !== '/' && pathname.startsWith(l.href + '/'))
             return (
               <Link key={l.href} href={l.href}
                 style={{ display:'flex', alignItems:'center', gap:14, padding:'13px 14px', borderRadius:10,
