@@ -54,7 +54,7 @@ export default function SiteNav() {
             <img src="/logo.png" alt="Aktif OSGB" style={{ height: 44, objectFit: 'contain' }} />
           </Link>
 
-          {/* Desktop */}
+          {/* Desktop linkler */}
           <ul className="site-nav-links" style={{ display: 'flex', gap: 4, listStyle: 'none', margin: 0, padding: 0 }}>
             {LINKLER.map(l => (
               <li key={l.href}>
@@ -70,7 +70,7 @@ export default function SiteNav() {
           </ul>
 
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <Link href="/tehlike-sinifi" style={{
+            <Link href="/tehlike-sinifi" className="site-tehlike-btn" style={{
               padding: '8px 14px', borderRadius: 8, background: 'rgba(245,194,0,.1)',
               border: '1px solid rgba(245,194,0,.3)', color: '#f5c200',
               fontSize: 12, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap',
@@ -78,7 +78,7 @@ export default function SiteNav() {
             {user ? (
               <Link href="/firmalar" style={{ padding: '8px 16px', borderRadius: 8, background: '#f5c200', color: '#1a1a1a', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Panel →</Link>
             ) : (
-              <Link href="/giris" className="site-giris-btn" style={{ padding: '8px 16px', borderRadius: 8, background: '#f5c200', color: '#1a1a1a', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Giriş</Link>
+              <Link href="/giris" style={{ padding: '8px 16px', borderRadius: 8, background: '#f5c200', color: '#1a1a1a', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Giriş</Link>
             )}
             <button onClick={() => setMenuAcik(!menuAcik)} className="site-burger"
               style={{ background: 'none', border: 'none', color: '#c8c8d8', cursor: 'pointer', fontSize: 22, display: 'none' }}>☰</button>
@@ -94,7 +94,17 @@ export default function SiteNav() {
                 color: pathname.startsWith(l.href) ? '#f5c200' : '#c8c8d8', textDecoration: 'none', fontSize: 15, fontWeight: 600,
               }}>{l.label}</Link>
             ))}
-            <Link href="/tehlike-sinifi" onClick={() => setMenuAcik(false)} style={{ display: 'block', marginTop: 16, padding: '12px 16px', borderRadius: 8, background: 'rgba(245,194,0,.1)', border: '1px solid rgba(245,194,0,.2)', color: '#f5c200', textDecoration: 'none', fontSize: 14, fontWeight: 700, textAlign: 'center' }}>
+            {/* Mobil menüde giriş butonu */}
+            {user ? (
+              <Link href="/firmalar" onClick={() => setMenuAcik(false)} style={{ display: 'block', marginTop: 16, padding: '12px 16px', borderRadius: 8, background: '#f5c200', color: '#1a1a1a', textDecoration: 'none', fontSize: 14, fontWeight: 700, textAlign: 'center' }}>
+                Panel →
+              </Link>
+            ) : (
+              <Link href="/giris" onClick={() => setMenuAcik(false)} style={{ display: 'block', marginTop: 16, padding: '12px 16px', borderRadius: 8, background: '#f5c200', color: '#1a1a1a', textDecoration: 'none', fontSize: 14, fontWeight: 700, textAlign: 'center' }}>
+                Giriş Yap
+              </Link>
+            )}
+            <Link href="/tehlike-sinifi" onClick={() => setMenuAcik(false)} style={{ display: 'block', marginTop: 8, padding: '12px 16px', borderRadius: 8, background: 'rgba(245,194,0,.1)', border: '1px solid rgba(245,194,0,.2)', color: '#f5c200', textDecoration: 'none', fontSize: 14, fontWeight: 700, textAlign: 'center' }}>
               🔍 Tehlike Sınıfı Sorgula
             </Link>
           </div>
@@ -102,7 +112,7 @@ export default function SiteNav() {
       </nav>
       <style>{`
         @media(max-width:900px){ .site-nav-links{display:none!important} .site-burger{display:flex!important} }
-        @media(max-width:640px){ .site-giris-btn{display:none!important} }
+        @media(max-width:640px){ .site-tehlike-btn{display:none!important} }
       `}</style>
     </>
   )
