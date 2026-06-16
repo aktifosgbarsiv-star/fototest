@@ -20,7 +20,7 @@ export default async function Kurumsal() {
   const a = await getAyarlar()
   const s = (k: string, fb = '') => a[k] || fb
 
-  const stil = { background: '#08080f', minHeight: '100vh', color: '#e8e8f0', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }
+  const stil = { background: '#f8f8f6', minHeight: '100vh', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }
   const wrap = { maxWidth: 1000, margin: '0 auto', padding: '80px 32px' }
   const label = { fontSize: 11, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase' as const, letterSpacing: 2, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }
   const line = { width: 20, height: 2, background: '#6366f1', borderRadius: 2, display: 'inline-block' }
@@ -56,7 +56,7 @@ export default async function Kurumsal() {
         {/* Hedefler */}
         <div style={{ marginBottom: 48 }}>
           <h2 style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 20, letterSpacing: -0.5 }}>Hedeflerimiz</h2>
-          <div style={{ background: '#0e0e1c', border: '1px solid rgba(255,255,255,.06)', borderRadius: 16, padding: 28 }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e8e8ed', borderRadius: 16, padding: 28 }}>
             {s('hedeflerimiz').split('\n').filter(Boolean).map((line, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
                 <span style={{ color: '#6366f1', fontWeight: 700, flexShrink: 0 }}>→</span>
@@ -69,7 +69,7 @@ export default async function Kurumsal() {
         {/* Değerler */}
         <div>
           <h2 style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 20, letterSpacing: -0.5 }}>Değerlerimiz</h2>
-          <div style={{ background: '#0e0e1c', border: '1px solid rgba(255,255,255,.06)', borderRadius: 16, padding: 28 }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e8e8ed', borderRadius: 16, padding: 28 }}>
             {s('degerlerimiz').split('\n').filter(Boolean).map((line, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
                 <span style={{ color: '#34d399', fontWeight: 700, flexShrink: 0 }}>✓</span>
@@ -82,7 +82,7 @@ export default async function Kurumsal() {
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, background: 'rgba(255,255,255,.05)', borderRadius: 20, overflow: 'hidden', marginTop: 60 }}>
           {[{ num: s('stat_kurum','500')+'+', label: 'Çalışılan Kurum' }, { num: s('stat_yil','10')+'+', label: 'Yıllık Deneyim' }, { num: s('stat_egitim','1200')+'+', label: 'Verilen Eğitim' }].map(({ num, label: l }) => (
-            <div key={l} style={{ background: '#0e0e1c', padding: '40px 32px', textAlign: 'center' as const }}>
+            <div key={l} style={{ background: '#ffffff', padding: '40px 32px', textAlign: 'center' as const }}>
               <div style={{ fontSize: 44, fontWeight: 800, color: '#6366f1', letterSpacing: -2, lineHeight: 1 }}>{num}</div>
               <div style={{ fontSize: 12, color: '#6b6b88', marginTop: 8, textTransform: 'uppercase' as const, letterSpacing: 1 }}>{l}</div>
             </div>

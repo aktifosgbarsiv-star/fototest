@@ -18,7 +18,7 @@ async function getYazilar() {
 export default async function Yazilarimiz() {
   const yazilar = await getYazilar()
   return (
-    <div style={{ background: '#08080f', minHeight: '100vh', color: '#e8e8f0', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
+    <div style={{ background: '#f8f8f6', minHeight: '100vh', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
       <SiteNav />
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '80px 32px' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -36,14 +36,14 @@ export default async function Yazilarimiz() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 24 }}>
             {yazilar.map((y: any) => (
-              <div key={y.id} style={{ background: '#0e0e1c', border: '1px solid rgba(255,255,255,.06)', borderRadius: 20, overflow: 'hidden' }}>
+              <div key={y.id} style={{ background: '#ffffff', border: '1px solid #e8e8ed', borderRadius: 20, overflow: 'hidden' }}>
                 {y.foto_url && <img src={y.foto_url} alt={y.baslik} style={{ width: '100%', height: 200, objectFit: 'cover' }} />}
                 <div style={{ padding: 28 }}>
-                  <div style={{ fontSize: 11, color: '#5d5d7a', marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, color: '#6b6b80', marginBottom: 12 }}>
                     {y.yazar} · {y.yayinlandi_at ? new Date(y.yayinlandi_at).toLocaleDateString('tr-TR') : ''}
                   </div>
-                  <h2 style={{ fontSize: 17, fontWeight: 700, color: '#e0e0f0', marginBottom: 10, lineHeight: 1.4 }}>{y.baslik}</h2>
-                  <p style={{ fontSize: 13, color: '#5d5d7a', lineHeight: 1.6 }}>{y.ozet}</p>
+                  <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e', marginBottom: 10, lineHeight: 1.4 }}>{y.baslik}</h2>
+                  <p style={{ fontSize: 13, color: '#6b6b80', lineHeight: 1.6 }}>{y.ozet}</p>
                 </div>
               </div>
             ))}

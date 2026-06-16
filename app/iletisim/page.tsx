@@ -19,11 +19,11 @@ export default function Iletisim() {
     setYukleniyor(false)
   }
 
-  const inp: any = { width:'100%', background:'rgba(255,255,255,.03)', border:'1px solid rgba(255,255,255,.08)', borderRadius:10, padding:'12px 16px', color:'#e0e0f0', fontSize:14, fontFamily:'inherit', outline:'none' }
-  const lbl: any = { display:'block', fontSize:12, fontWeight:600, color:'#5d5d7a', textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }
+  const inp: any = { width:'100%', background:'#f4f4f8', border:'1px solid #e8e8ed', borderRadius:10, padding:'12px 16px', color:'#1a1a2e', fontSize:14, fontFamily:'inherit', outline:'none' }
+  const lbl: any = { display:'block', fontSize:12, fontWeight:600, color:'#6b6b80', textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }
 
   return (
-    <div style={{ background:'#08080f', minHeight:'100vh', color:'#e8e8f0', fontFamily:"'Inter',-apple-system,system-ui,sans-serif" }}>
+    <div style={{ background:'#f8f8f6', minHeight:'100vh', color:'#1a1a2e', fontFamily:"'Inter',-apple-system,system-ui,sans-serif" }}>
       <SiteNav />
       <div style={{ maxWidth:1200, margin:'0 auto', padding:'80px 32px' }}>
         <div className="site-iletisim-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1.4fr', gap:64, alignItems:'start' }}>
@@ -51,7 +51,7 @@ export default function Iletisim() {
           </div>
 
           {/* Form */}
-          <div style={{ background:'#0e0e1c', border:'1px solid rgba(255,255,255,.07)', borderRadius:20, padding:36 }}>
+          <div style={{ background:'#ffffff', border:'1px solid #e8e8ed', borderRadius:20, padding:36 }}>
             {gonderildi ? (
               <div style={{ textAlign:'center', padding:'60px 0' }}>
                 <div style={{ fontSize:52, marginBottom:20 }}>✅</div>

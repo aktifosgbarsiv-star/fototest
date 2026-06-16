@@ -17,7 +17,7 @@ async function getReferanslar() {
 export default async function Referanslar() {
   const referanslar = await getReferanslar()
   return (
-    <div style={{ background: '#08080f', minHeight: '100vh', color: '#e8e8f0', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
+    <div style={{ background: '#f8f8f6', minHeight: '100vh', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
       <SiteNav />
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '80px 32px' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -30,7 +30,7 @@ export default async function Referanslar() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 20 }}>
           {referanslar.map((r: any) => (
             <div key={r.id} style={{
-              background: '#0e0e1c', border: '1px solid rgba(255,255,255,.06)',
+              background: '#ffffff', border: '1px solid #e8e8ed',
               borderRadius: 16, padding: 24, textAlign: 'center',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
             }}>
@@ -40,7 +40,7 @@ export default async function Referanslar() {
               ) : (
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#c0c0e0' }}>{r.firma_adi}</div>
               )}
-              <div style={{ fontSize: 12, color: '#5d5d7a' }}>{r.sektor}</div>
+              <div style={{ fontSize: 12, color: '#6b6b80' }}>{r.sektor}</div>
             </div>
           ))}
         </div>
