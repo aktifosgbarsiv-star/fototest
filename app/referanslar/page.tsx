@@ -12,7 +12,7 @@ async function getReferanslar() {
 }
 
 export default function Referanslar() {
-  const [referanslar, setReferanslar] = useState<any>(null)
+  const [referanslar, setReferanslar] = useState<any>([])
   useEffect(() => { getReferanslar().then(setReferanslar) }, [])
   return (
     <div style={{ background: '#f8f8f6', minHeight: '100vh', width: '100%', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
@@ -26,7 +26,7 @@ export default function Referanslar() {
           Afyon ve çevre illerinde 500'den fazla kuruma verdiğimiz kesintisiz hizmetle güven inşa ettik.
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 20 }}>
-          {referanslar.map((r: any) => (
+          {(referanslar || []).map((r: any) => (
             <div key={r.id} style={{
               background: '#ffffff', border: '1px solid #e8e8ed',
               borderRadius: 16, padding: 24, textAlign: 'center',
