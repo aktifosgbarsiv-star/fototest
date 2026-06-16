@@ -12,7 +12,7 @@ async function getEkip() {
 }
 
 export default function Ekibimiz() {
-  const [ekip, setEkip] = useState<any>(null)
+  const [ekip, setEkip] = useState<any>([])
   useEffect(() => { getEkip().then(setEkip) }, [])
   return (
     <div style={{ background: '#f8f8f6', minHeight: '100vh', width: '100%', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
@@ -32,7 +32,7 @@ export default function Ekibimiz() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 20 }}>
-            {ekip.map((u: any) => (
+            {(ekip || []).map((u: any) => (
               <div key={u.id} style={{ background: '#ffffff', border: '1px solid #e8e8ed', borderRadius: 20, padding: 32, textAlign: 'center' }}>
                 <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(99,102,241,.15)', border: '2px solid rgba(99,102,241,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28, fontWeight: 800, color: '#a5b4fc' }}>
                   {u.ad_soyad?.charAt(0)}
