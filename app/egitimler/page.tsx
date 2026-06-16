@@ -12,7 +12,8 @@ async function getEgitimler() {
 }
 
 export default function Egitimler() {
-  const egitimler = await getEgitimler()
+  const [egitimler, setEgitimler] = useState<any>(null)
+  useEffect(() => { getEgitimler().then(setEgitimler) }, [])
   return (
     <div style={{ background: '#f8f8f6', minHeight: '100vh', width: '100%', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
       <SiteNav />
