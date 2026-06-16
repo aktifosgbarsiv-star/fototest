@@ -13,6 +13,16 @@ const ROL_ERISIM: Record<string, string[]> = {
   saha:      ['/koordinasyon','/ziyaretler','/arsiv'],
 }
 
+// Her rol için varsayılan ilk sayfa
+const ROL_ANA_SAYFA: Record<string, string> = {
+  yonetici:  '/firmalar',
+  operasyon: '/firmalar',
+  hekim:     '/saglik',
+  satis:     '/teklifler',
+  muhasebe:  '/tahsilat',
+  saha:      '/koordinasyon',
+}
+
 const PANEL_SAYFALAR = ['/firmalar','/ara','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site']
 
 const PUBLIC_SAYFALAR = ['/kurumsal','/ekibimiz','/hizmetlerimiz','/egitimler','/referanslar','/yazilarimiz','/iletisim']
@@ -56,15 +66,28 @@ export async function middleware(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Ana sayfa (landing): login varsa panele gönder, yoksa landing göster
+  // Rol yardımcı fonksiyon
+  async function getRol() {
+    if (!user) return 'operasyon'
+    const { data: personel } = await supabase.from('personeller').select('rol').eq('id', user.id).single()
+    return personel?.rol || 'operasyon'
+  }
+
+  // Ana sayfa (landing): login varsa rol bazlı panele gönder, yoksa landing göster
   if (path === '/') {
-    if (user) return NextResponse.redirect(new URL('/firmalar', req.url))
+    if (user) {
+      const rol = await getRol()
+      return NextResponse.redirect(new URL(ROL_ANA_SAYFA[rol] || '/koordinasyon', req.url))
+    }
     return res
   }
 
-  // Giriş sayfası: login varsa panele gönder, yoksa göster
+  // Giriş sayfası: login varsa rol bazlı panele gönder, yoksa göster
   if (path === '/giris') {
-    if (user) return NextResponse.redirect(new URL('/firmalar', req.url))
+    if (user) {
+      const rol = await getRol()
+      return NextResponse.redirect(new URL(ROL_ANA_SAYFA[rol] || '/koordinasyon', req.url))
+    }
     return res
   }
 
@@ -73,11 +96,10 @@ export async function middleware(req: NextRequest) {
   if (isPanelSayfasi) {
     if (!user) return NextResponse.redirect(new URL('/giris', req.url))
     // Rol kontrolü
-    const { data: personel } = await supabase.from('personeller').select('rol').eq('id', user.id).single()
-    const rol = personel?.rol || 'operasyon'
+    const rol = await getRol()
     const izinli = ROL_ERISIM[rol] || ROL_ERISIM.operasyon
     const yetkili = izinli.some(r => path === r || path.startsWith(r + '/'))
-    if (!yetkili) return NextResponse.redirect(new URL('/firmalar', req.url))
+    if (!yetkili) return NextResponse.redirect(new URL(ROL_ANA_SAYFA[rol] || '/koordinasyon', req.url))
   }
 
   return res
