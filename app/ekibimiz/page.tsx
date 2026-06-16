@@ -12,7 +12,8 @@ async function getEkip() {
 }
 
 export default function Ekibimiz() {
-  const ekip = await getEkip()
+  const [ekip, setEkip] = useState<any>(null)
+  useEffect(() => { getEkip().then(setEkip) }, [])
   return (
     <div style={{ background: '#f8f8f6', minHeight: '100vh', width: '100%', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
       <SiteNav />
