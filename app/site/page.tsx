@@ -12,6 +12,7 @@ const SEKMELER = [
   { id: 'referanslar', label: 'Referanslar', icon: Globe },
   { id: 'yazilar', label: 'Yazılar', icon: FileText },
   { id: 'talepler', label: 'Teklif Talepleri', icon: MessageSquare },
+  { id: 'seo', label: 'SEO Ayarları', icon: Globe },
 ]
 
 export default function SiteYonetim() {
@@ -23,6 +24,8 @@ export default function SiteYonetim() {
   const [referanslar, setReferanslar] = useState<any[]>([])
   const [yazilar, setYazilar] = useState<any[]>([])
   const [talepler, setTalepler] = useState<any[]>([])
+  const [seoData, setSeoData] = useState<any[]>([])
+  const [seciliSeo, setSeciliSeo] = useState<any>(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [kaydediliyor, setKaydediliyor] = useState(false)
   const [modal, setModal] = useState<any>(null)
@@ -56,6 +59,9 @@ export default function SiteYonetim() {
     } else if (sekme === 'talepler') {
       const { data } = await sb.from('site_teklif_talepleri').select('*').order('olusturuldu_at', { ascending: false })
       setTalepler(data||[])
+    } else if (sekme === 'seo') {
+      const { data } = await sb.from('site_seo').select('*').order('sayfa')
+      setSeoData(data||[])
     }
     setYukleniyor(false)
   }
@@ -321,6 +327,64 @@ export default function SiteYonetim() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {/* SEO */}
+        {sekme === 'seo' && (
+          <div style={{ display:'grid', gridTemplateColumns: seciliSeo ? '280px 1fr' : '1fr', gap:20 }}>
+            {/* Sayfa listesi */}
+            <div className="card" style={{ padding:0, height:'fit-content' }}>
+              {seoData.map(s => (
+                <div key={s.id} onClick={() => setSeciliSeo(s)} style={{
+                  padding:'12px 16px', cursor:'pointer', borderBottom:'1px solid var(--border)',
+                  background: seciliSeo?.id === s.id ? 'rgba(245,194,0,.06)' : 'transparent',
+                  borderLeft: seciliSeo?.id === s.id ? '3px solid #f5c200' : '3px solid transparent',
+                }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>{s.sayfa}</div>
+                  <div style={{ fontSize:11, color:'var(--text-faint)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:200 }}>{s.title}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* SEO düzenleme */}
+            {seciliSeo && (
+              <div className="card" style={{ padding:24 }}>
+                <h3 style={{ fontWeight:700, color:'var(--text)', marginBottom:20 }}>SEO: {seciliSeo.sayfa}</h3>
+                {[
+                  ['title', 'Sayfa Başlığı (Title)'],
+                  ['description', 'Meta Description'],
+                  ['keywords', 'Keywords'],
+                  ['og_title', 'OG Title (Sosyal Medya)'],
+                  ['og_description', 'OG Description'],
+                  ['og_image', 'OG Image URL'],
+                  ['canonical', 'Canonical URL'],
+                ].map(([k, l]) => (
+                  <div key={k} style={{ marginBottom:14 }}>
+                    <label style={{ display:'block', fontSize:12, fontWeight:600, color:'var(--text-faint)', textTransform:'uppercase', letterSpacing:.5, marginBottom:6 }}>{l}</label>
+                    {k === 'description' || k === 'og_description' ? (
+                      <textarea value={seciliSeo[k]||''} onChange={e => setSeciliSeo({...seciliSeo,[k]:e.target.value})} style={{ minHeight:70, resize:'vertical' }} />
+                    ) : (
+                      <input value={seciliSeo[k]||''} onChange={e => setSeciliSeo({...seciliSeo,[k]:e.target.value})} />
+                    )}
+                    {k === 'title' && <div style={{ fontSize:11, color: (seciliSeo[k]||'').length > 60 ? 'var(--red)' : 'var(--text-faint)', marginTop:4 }}>{(seciliSeo[k]||'').length}/60 karakter {(seciliSeo[k]||'').length > 60 ? '⚠️ Çok uzun!' : '✓'}</div>}
+                    {k === 'description' && <div style={{ fontSize:11, color: (seciliSeo[k]||'').length > 160 ? 'var(--red)' : 'var(--text-faint)', marginTop:4 }}>{(seciliSeo[k]||'').length}/160 karakter {(seciliSeo[k]||'').length > 160 ? '⚠️ Çok uzun!' : '✓'}</div>}
+                  </div>
+                ))}
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:'var(--text-faint)', textTransform:'uppercase', letterSpacing:.5, marginBottom:6 }}>Robots</label>
+                  <select value={seciliSeo.robots||'index, follow'} onChange={e => setSeciliSeo({...seciliSeo, robots:e.target.value})}>
+                    <option value="index, follow">index, follow</option>
+                    <option value="noindex, follow">noindex, follow</option>
+                    <option value="index, nofollow">index, nofollow</option>
+                    <option value="noindex, nofollow">noindex, nofollow</option>
+                  </select>
+                </div>
+                <button className="btn" onClick={async () => {
+                  await sb.from('site_seo').update({ ...seciliSeo, guncellendi_at: new Date().toISOString() }).eq('id', seciliSeo.id)
+                  yukle()
+                }}><Check size={16} /> SEO Kaydet</button>
+              </div>
+            )}
           </div>
         )}
         </>

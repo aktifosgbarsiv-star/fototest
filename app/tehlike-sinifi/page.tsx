@@ -3,7 +3,10 @@ import SiteFooter from '@/components/site/SiteFooter'
 import SiteFloating from '@/components/site/SiteFloating'
 import NaceSorgulama from './NaceSorgulama'
 
-export const metadata = {
+import { getSeoMetadata } from '@/lib/seo'
+export async function generateMetadata() { return getSeoMetadata('/tehlike-sinifi') }
+
+const _metadata = {
   title: 'Tehlike Sınıfı & NACE Kodu Sorgulama | Aktif OSGB Afyonkarahisar',
   description: 'İşyerinizin NACE kodunu ve tehlike sınıfını ücretsiz sorgulayın. 6331 sayılı Kanun kapsamında az tehlikeli, tehlikeli, çok tehlikeli sınıf tespiti.',
   keywords: 'NACE kodu sorgulama, tehlike sınıfı, iş güvenliği, OSGB, Afyonkarahisar',
