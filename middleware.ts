@@ -13,7 +13,6 @@ const ROL_ERISIM: Record<string, string[]> = {
   saha:      ['/koordinasyon','/ziyaretler','/arsiv'],
 }
 
-// Her rol için varsayılan ilk sayfa
 const ROL_ANA_SAYFA: Record<string, string> = {
   yonetici:  '/firmalar',
   operasyon: '/firmalar',
@@ -23,14 +22,13 @@ const ROL_ANA_SAYFA: Record<string, string> = {
   saha:      '/koordinasyon',
 }
 
-// Panel sayfaları — auth + rol kontrolü gerektirir
+// Panel sayfaları — /arsiv eklendi
 const PANEL_SAYFALAR = [
   '/firmalar','/ara','/saglik','/teklifler','/tahsilat','/koordinasyon',
   '/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar',
   '/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site'
 ]
 
-// Public sayfalar — auth gerekmez, herkese açık
 const PUBLIC_SAYFALAR = [
   '/kurumsal','/ekibimiz','/hizmetlerimiz','/egitimler',
   '/referanslar','/yazilarimiz','/iletisim',
@@ -43,10 +41,8 @@ export async function middleware(req: NextRequest) {
 
   const path = req.nextUrl.pathname
 
-  // Static dosyalar ve API — dokunma
   if (path.startsWith('/_next') || path.startsWith('/api') || path === '/favicon.ico') return res
 
-  // BAKIM MODU
   if (BAKIM_MODU) {
     if (path === '/bakim') return res
     const bakimHaric = [...PANEL_SAYFALAR, '/giris']
@@ -55,10 +51,8 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Public sayfalar — direkt geç
   if (PUBLIC_SAYFALAR.some(p => path === p || path.startsWith(p + '/'))) return res
 
-  // Supabase auth
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -77,14 +71,12 @@ export async function middleware(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Rol sorgula (tek fonksiyon, tekrar sorgu yok)
   async function getRol(): Promise<string> {
     if (!user) return 'operasyon'
     const { data: personel } = await supabase.from('personeller').select('rol').eq('id', user.id).single()
     return personel?.rol || 'operasyon'
   }
 
-  // Ana sayfa (landing): login varsa rol bazlı panele gönder, yoksa landing göster
   if (path === '/') {
     if (user) {
       const rol = await getRol()
@@ -93,7 +85,6 @@ export async function middleware(req: NextRequest) {
     return res
   }
 
-  // Giriş sayfası: login varsa rol bazlı panele gönder, yoksa göster
   if (path === '/giris') {
     if (user) {
       const rol = await getRol()
@@ -102,7 +93,6 @@ export async function middleware(req: NextRequest) {
     return res
   }
 
-  // Panel sayfaları: login zorunlu + rol kontrolü
   const isPanelSayfasi = PANEL_SAYFALAR.some(p => path === p || path.startsWith(p + '/'))
   if (isPanelSayfasi) {
     if (!user) return NextResponse.redirect(new URL('/giris', req.url))
