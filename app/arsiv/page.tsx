@@ -19,6 +19,11 @@ export default function Arsiv() {
   const [evrakModal, setEvrakModal] = useState(false)
   const [detayModal, setDetayModal] = useState<any>(null)
   const [dosyaYukleniyor, setDosyaYukleniyor] = useState(false)
+  const [yeniEkleModal, setYeniEkleModal] = useState<any>(null) // {firma, evrak}
+  const [yeniTarih, setYeniTarih] = useState(new Date().toISOString().slice(0,10))
+  const [yeniDosya, setYeniDosya] = useState<File|null>(null)
+  const [yeniKayitYukleniyor, setYeniKayitYukleniyor] = useState(false)
+  const yeniDosyaRef = useRef<HTMLInputElement>(null)
   // Aktivite
   const [aktiviteler, setAktiviteler] = useState<any[]>([])
   const [aktYukleniyor, setAktYukleniyor] = useState(false)
@@ -102,13 +107,39 @@ export default function Arsiv() {
       return
     }
     if (!['yonetici','operasyon','saha','hekim'].includes(rol)) return
+    // Direkt kaydetme yerine modal aç
+    const firma = firmalar.find(f => f.id === firmaId)
+    const evrak = evraklar.find(e => e.id === evrakId)
+    setYeniTarih(new Date().toISOString().slice(0,10))
+    setYeniDosya(null)
+    setYeniEkleModal({ firma, evrak, firmaId, evrakId })
+  }
+
+  async function yeniEvrakKaydet() {
+    if (!yeniEkleModal) return
+    if (!yeniDosya) { alert('Lütfen evrak dosyası yükleyin.'); return }
+    setYeniKayitYukleniyor(true)
+    const { firmaId, evrakId, firma, evrak } = yeniEkleModal
+
+    // Önce dosyayı yükle
+    const ext = yeniDosya.name.split('.').pop()
+    const path = `${firmaId}/${evrakId}_${Date.now()}.${ext}`
+    const { error: uploadErr } = await sb.storage.from('evrak-dosyalar').upload(path, yeniDosya, { upsert: true })
+    if (uploadErr) { alert('Yükleme hatası: ' + uploadErr.message); setYeniKayitYukleniyor(false); return }
+    const { data: urlData } = sb.storage.from('evrak-dosyalar').getPublicUrl(path)
+
+    // Sonra kaydı oluştur
     const kayit = {
       firma_id: firmaId, evrak_id: evrakId, tiklandi: true,
       tikleyen: personel?.ad_soyad || '', tikleyen_id: personel?.id,
-      tiklama_tarihi: new Date().toISOString(),
+      tiklama_tarihi: new Date(yeniTarih).toISOString(),
+      dosya_url: urlData.publicUrl, dosya_ad: yeniDosya.name,
     }
     const { data } = await sb.from('firma_evrak_durumu').upsert(kayit, { onConflict: 'firma_id,evrak_id' }).select().single()
     if (data) setDurumlar(d => ({ ...d, [firmaId]: { ...(d[firmaId] || {}), [evrakId]: data } }))
+    setYeniEkleModal(null)
+    setYeniDosya(null)
+    setYeniKayitYukleniyor(false)
   }
 
   async function tikSil(firmaId: string, evrakId: string, kayitId: string, dosyaUrl?: string) {
@@ -502,6 +533,50 @@ export default function Arsiv() {
                 🗑️ Evrak Kaydını Sil
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* YENİ EVRAK EKLE MODAL */}
+      {yeniEkleModal && (
+        <div className="modal-overlay" onClick={() => setYeniEkleModal(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth:440 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+              <h2 style={{ fontFamily:'Sora,sans-serif', fontSize:17, fontWeight:600 }}>Evrak Ekle</h2>
+              <button onClick={() => setYeniEkleModal(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-dim)' }}><X size={20}/></button>
+            </div>
+            <div style={{ background:'var(--surface-2)', borderRadius:10, padding:'12px 14px', marginBottom:16 }}>
+              <div style={{ fontWeight:600, fontSize:14 }}>{yeniEkleModal.firma?.unvan}</div>
+              <div style={{ fontSize:13, color:'var(--text-dim)', marginTop:2 }}>{yeniEkleModal.evrak?.ad}</div>
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <label style={{ fontSize:12, color:'var(--text-dim)', fontWeight:600, marginBottom:6, display:'block' }}>EVRAK TARİHİ</label>
+              <input type="date" value={yeniTarih} onChange={e => setYeniTarih(e.target.value)}
+                max={new Date().toISOString().slice(0,10)}
+                style={{ width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface-2)', color:'var(--text)', fontFamily:'inherit', fontSize:14 }}/>
+              <div style={{ fontSize:11, color:'var(--text-faint)', marginTop:4 }}>Gerçek evrak tarihini girin (geçmiş tarih girilebilir)</div>
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <label style={{ fontSize:12, color:'var(--text-dim)', fontWeight:600, marginBottom:6, display:'block' }}>EVRAK DOSYASI <span style={{ color:'var(--red)' }}>*</span></label>
+              <input ref={yeniDosyaRef} type="file" style={{ display:'none' }} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                onChange={e => setYeniDosya(e.target.files?.[0] || null)}/>
+              {yeniDosya ? (
+                <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', background:'var(--surface-2)', borderRadius:8, border:'1px solid var(--border)' }}>
+                  <FileText size={16} color="var(--accent)"/>
+                  <span style={{ fontSize:13, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{yeniDosya.name}</span>
+                  <button onClick={() => setYeniDosya(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-faint)', padding:2 }}><X size={14}/></button>
+                </div>
+              ) : (
+                <button onClick={() => yeniDosyaRef.current?.click()}
+                  style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'12px 14px', borderRadius:8, border:'2px dashed var(--border)', background:'transparent', color:'var(--text-dim)', cursor:'pointer', fontSize:13, justifyContent:'center', fontFamily:'inherit' }}>
+                  <Upload size={16}/> Dosya Seç (PDF, JPG, PNG, DOC)
+                </button>
+              )}
+            </div>
+            <button onClick={yeniEvrakKaydet} disabled={yeniKayitYukleniyor || !yeniDosya}
+              style={{ width:'100%', padding:14, borderRadius:10, background: (!yeniDosya || yeniKayitYukleniyor) ? 'var(--border)' : 'var(--accent)', color: (!yeniDosya || yeniKayitYukleniyor) ? 'var(--text-faint)' : '#000', fontSize:15, fontWeight:700, border:'none', cursor: (!yeniDosya || yeniKayitYukleniyor) ? 'not-allowed' : 'pointer', fontFamily:'inherit' }}>
+              {yeniKayitYukleniyor ? 'Yükleniyor...' : 'Evrak Kaydet'}
+            </button>
           </div>
         </div>
       )}
