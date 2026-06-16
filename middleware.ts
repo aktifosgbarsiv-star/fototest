@@ -25,7 +25,7 @@ const ROL_ANA_SAYFA: Record<string, string> = {
 
 const PANEL_SAYFALAR = ['/firmalar','/ara','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site']
 
-const PUBLIC_SAYFALAR = ['/kurumsal','/ekibimiz','/hizmetlerimiz','/egitimler','/referanslar','/yazilarimiz','/iletisim']
+const PUBLIC_SAYFALAR = ['/kurumsal','/ekibimiz','/hizmetlerimiz','/egitimler','/referanslar','/yazilarimiz','/iletisim','/portal']
 
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: req })
