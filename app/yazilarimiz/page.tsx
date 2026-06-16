@@ -13,7 +13,8 @@ async function getYazilar() {
 }
 
 export default function Yazilarimiz() {
-  const yazilar = await getYazilar()
+  const [yazilar, setYazilar] = useState<any>(null)
+  useEffect(() => { getYazilar().then(setYazilar) }, [])
   return (
     <div style={{ background: '#f8f8f6', minHeight: '100vh', width: '100%', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
       <SiteNav />
