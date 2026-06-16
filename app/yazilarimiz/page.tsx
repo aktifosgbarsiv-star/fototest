@@ -13,7 +13,7 @@ async function getYazilar() {
 }
 
 export default function Yazilarimiz() {
-  const [yazilar, setYazilar] = useState<any>(null)
+  const [yazilar, setYazilar] = useState<any>([])
   useEffect(() => { getYazilar().then(setYazilar) }, [])
   return (
     <div style={{ background: '#f8f8f6', minHeight: '100vh', width: '100%', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
@@ -33,7 +33,7 @@ export default function Yazilarimiz() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 24 }}>
-            {yazilar.map((y: any) => (
+            {(yazilar || []).map((y: any) => (
               <div key={y.id} style={{ background: '#ffffff', border: '1px solid #e8e8ed', borderRadius: 20, overflow: 'hidden' }}>
                 {y.foto_url && <img src={y.foto_url} alt={y.baslik} style={{ width: '100%', height: 200, objectFit: 'cover' }} />}
                 <div style={{ padding: 28 }}>
