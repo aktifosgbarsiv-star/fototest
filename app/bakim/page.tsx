@@ -7,7 +7,7 @@ export default function Bakim() {
       padding: 32, textAlign: 'center',
     }}>
       <div>
-        <img src="https://aktifosgb.com.tr/wp-content/uploads/2020/02/aktifosgblogo.png" alt="Aktif OSGB" style={{ height: 60, marginBottom: 40, opacity: .9 }} />
+        <img src="/logo.png" alt="Aktif OSGB" style={{ height: 60, marginBottom: 40, opacity: .9 }} />
         <div style={{ fontSize: 56, marginBottom: 24 }}>🔧</div>
         <h1 style={{ fontSize: 'clamp(22px,4vw,36px)', fontWeight: 900, color: '#fff', marginBottom: 20, letterSpacing: -1 }}>
           Bakım Çalışması

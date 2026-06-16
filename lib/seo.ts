@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { Metadata } from 'next'
 
 const SITE_URL = 'https://aktifosgb.com.tr'
-const DEFAULT_IMAGE = 'https://aktifosgb.com.tr/wp-content/uploads/2020/02/aktifosgblogo.png'
+const DEFAULT_IMAGE = '/logo.png'
 
 export async function getSeoMetadata(sayfa: string): Promise<Metadata> {
   const sb = createClient(
@@ -56,8 +56,8 @@ export const LOCAL_BUSINESS_SCHEMA = {
   name: 'Aktif OSGB',
   description: '2014 yılından bu yana Afyonkarahisar\'da yetkili iş sağlığı ve güvenliği hizmetleri.',
   url: 'https://aktifosgb.com.tr',
-  logo: 'https://aktifosgb.com.tr/wp-content/uploads/2020/02/aktifosgblogo.png',
-  image: 'https://aktifosgb.com.tr/wp-content/uploads/2020/02/aktifosgblogo.png',
+  logo: '/logo.png',
+  image: '/logo.png',
   telephone: ['+90-272-223-20-03', '+90-553-169-68-67'],
   email: 'info@aktifosgb.com.tr',
   address: {

@@ -51,7 +51,7 @@ export default function SiteNav() {
       }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-            <img src="https://aktifosgb.com.tr/wp-content/uploads/2020/02/aktifosgblogo.png" alt="Aktif OSGB" style={{ height: 44, objectFit: 'contain' }} />
+            <img src="/logo.png" alt="Aktif OSGB" style={{ height: 44, objectFit: 'contain' }} />
           </Link>
 
           {/* Desktop */}

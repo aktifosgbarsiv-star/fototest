@@ -19,7 +19,7 @@ export default function SiteFooter() {
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '56px 32px 32px' }}>
         <div className="site-footer-grid" style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr 1fr', gap: 48, marginBottom: 48, borderBottom: '1px solid rgba(255,255,255,.06)', paddingBottom: 48 }}>
           <div>
-            <img src="https://aktifosgb.com.tr/wp-content/uploads/2020/02/aktifosgblogo.png" alt="Aktif OSGB" style={{ height: 50, objectFit: 'contain', marginBottom: 16, filter: 'brightness(1.1)' }} />
+            <img src="/logo.png" alt="Aktif OSGB" style={{ height: 50, objectFit: 'contain', marginBottom: 16, filter: 'brightness(1.1)' }} />
             <p style={{ fontSize: 13, color: '#5d5d7a', lineHeight: 1.7, maxWidth: 260, marginBottom: 20 }}>
               2014'ten bu yana Afyonkarahisar ve çevre illerinde iş sağlığı ve güvenliği alanında profesyonel hizmet.
             </p>

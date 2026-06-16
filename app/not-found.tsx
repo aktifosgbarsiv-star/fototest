@@ -15,7 +15,7 @@ export default function NotFound() {
       padding: 32, textAlign: 'center',
     }}>
       <div style={{ maxWidth: 480 }}>
-        <img src="https://aktifosgb.com.tr/wp-content/uploads/2020/02/aktifosgblogo.png"
+        <img src="/logo.png"
           alt="Aktif OSGB" style={{ height: 48, marginBottom: 40, opacity: .85 }} />
 
         <div style={{ fontSize: 80, fontWeight: 900, color: 'rgba(245,194,0,.15)', lineHeight: 1, letterSpacing: -4, marginBottom: 8 }}>404</div>

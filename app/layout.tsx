@@ -19,9 +19,9 @@ export const metadata: Metadata = {
     siteName: 'Aktif OSGB',
     title: 'Aktif OSGB | Afyon İş Güvenliği',
     description: '2014\'ten bu yana Afyonkarahisar\'da yetkili OSGB hizmetleri.',
-    images: [{ url: 'https://aktifosgb.com.tr/wp-content/uploads/2020/02/aktifosgblogo.png', width: 1200, height: 630, alt: 'Aktif OSGB Logo' }],
+    images: [{ url: '/logo.png', width: 1200, height: 630, alt: 'Aktif OSGB Logo' }],
   },
-  twitter: { card: 'summary_large_image', title: 'Aktif OSGB | Afyon İş Güvenliği', description: '2014\'ten bu yana Afyonkarahisar\'da yetkili OSGB hizmetleri.', images: ['https://aktifosgb.com.tr/wp-content/uploads/2020/02/aktifosgblogo.png'] },
+  twitter: { card: 'summary_large_image', title: 'Aktif OSGB | Afyon İş Güvenliği', description: '2014\'ten bu yana Afyonkarahisar\'da yetkili OSGB hizmetleri.', images: ['/logo.png'] },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 } },
   verification: { google: '', yandex: '5ebcf3f9d59c13bd', other: { 'msvalidate.01': ['F781B011863FA586706406E04E3EC7EF'] } },
 }

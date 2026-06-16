@@ -75,7 +75,7 @@ export default function PortalDosyalar() {
       <div style={{ background: '#0e0e1c', borderBottom: '1px solid rgba(245,194,0,.12)', padding: '0 24px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <img src="https://aktifosgb.com.tr/wp-content/uploads/2020/02/aktifosgblogo.png" alt="Aktif OSGB" style={{ height: 36, objectFit: 'contain' }} />
+            <img src="/logo.png" alt="Aktif OSGB" style={{ height: 36, objectFit: 'contain' }} />
             <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,.1)' }} />
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{firma.unvan}</div>

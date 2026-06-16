@@ -42,7 +42,7 @@ export default function PortalGiris() {
       <div style={{ width: '100%', maxWidth: 400 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <img src="https://aktifosgb.com.tr/wp-content/uploads/2020/02/aktifosgblogo.png"
+          <img src="/logo.png"
             alt="Aktif OSGB" style={{ height: 52, objectFit: 'contain' }} />
           <p style={{ fontSize: 13, color: '#5d5d7a', marginTop: 12 }}>Firma Portali</p>
         </div>
