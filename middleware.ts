@@ -23,9 +23,19 @@ const ROL_ANA_SAYFA: Record<string, string> = {
   saha:      '/koordinasyon',
 }
 
-const PANEL_SAYFALAR = ['/firmalar','/ara','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site']
+// Panel sayfaları — auth + rol kontrolü gerektirir
+const PANEL_SAYFALAR = [
+  '/firmalar','/ara','/saglik','/teklifler','/tahsilat','/koordinasyon',
+  '/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar',
+  '/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site'
+]
 
-const PUBLIC_SAYFALAR = ['/kurumsal','/ekibimiz','/hizmetlerimiz','/egitimler','/referanslar','/yazilarimiz','/iletisim','/portal']
+// Public sayfalar — auth gerekmez, herkese açık
+const PUBLIC_SAYFALAR = [
+  '/kurumsal','/ekibimiz','/hizmetlerimiz','/egitimler',
+  '/referanslar','/yazilarimiz','/iletisim',
+  '/tehlike-sinifi','/ramak-kala','/portal'
+]
 
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: req })
@@ -33,18 +43,19 @@ export async function middleware(req: NextRequest) {
 
   const path = req.nextUrl.pathname
 
-  // Static dosyalar — dokunma
+  // Static dosyalar ve API — dokunma
   if (path.startsWith('/_next') || path.startsWith('/api') || path === '/favicon.ico') return res
 
-  // BAKIM MODU — /giris ve /firmalar/* hariç herkesi bakım sayfasına yönlendir
+  // BAKIM MODU
   if (BAKIM_MODU) {
     if (path === '/bakim') return res
-    if (!path.startsWith('/giris') && !path.startsWith('/firmalar') && !path.startsWith('/saglik') && !path.startsWith('/koordinasyon') && !path.startsWith('/teklifler') && !path.startsWith('/tahsilat') && !path.startsWith('/ziyaretler') && !path.startsWith('/hekim') && !path.startsWith('/malzemeler') && !path.startsWith('/tedarikciler') && !path.startsWith('/taramalar') && !path.startsWith('/personeller') && !path.startsWith('/raporlar') && !path.startsWith('/fatura') && !path.startsWith('/eksik-veriler') && !path.startsWith('/arsiv') && !path.startsWith('/site') && !path.startsWith('/ara') && !path.startsWith('/idari')) {
+    const bakimHaric = [...PANEL_SAYFALAR, '/giris']
+    if (!bakimHaric.some(p => path === p || path.startsWith(p + '/'))) {
       return NextResponse.redirect(new URL('/bakim', req.url))
     }
   }
 
-  // Public sayfalar — herkes görebilir, auth kontrolü yok
+  // Public sayfalar — direkt geç
   if (PUBLIC_SAYFALAR.some(p => path === p || path.startsWith(p + '/'))) return res
 
   // Supabase auth
@@ -66,8 +77,8 @@ export async function middleware(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Rol yardımcı fonksiyon
-  async function getRol() {
+  // Rol sorgula (tek fonksiyon, tekrar sorgu yok)
+  async function getRol(): Promise<string> {
     if (!user) return 'operasyon'
     const { data: personel } = await supabase.from('personeller').select('rol').eq('id', user.id).single()
     return personel?.rol || 'operasyon'
@@ -91,11 +102,10 @@ export async function middleware(req: NextRequest) {
     return res
   }
 
-  // Panel sayfaları: login zorunlu
+  // Panel sayfaları: login zorunlu + rol kontrolü
   const isPanelSayfasi = PANEL_SAYFALAR.some(p => path === p || path.startsWith(p + '/'))
   if (isPanelSayfasi) {
     if (!user) return NextResponse.redirect(new URL('/giris', req.url))
-    // Rol kontrolü
     const rol = await getRol()
     const izinli = ROL_ERISIM[rol] || ROL_ERISIM.operasyon
     const yetkili = izinli.some(r => path === r || path.startsWith(r + '/'))

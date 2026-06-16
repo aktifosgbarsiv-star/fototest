@@ -7,17 +7,19 @@ import { UserCog, Menu, X, LogOut, LayoutDashboard, Building2, HeartPulse, FileT
 
 const ROL_AD: any = { yonetici:'Yönetici', operasyon:'Operasyon', hekim:'Hekim', satis:'Satış', muhasebe:'Muhasebe', saha:'Saha Uzmanı' }
 
+// Middleware ile tam uyumlu
 const ERISIM: any = {
-  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv'],
-  operasyon: ['/','/firmalar','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
+  yonetici:  ['/','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site'],
+  operasyon: ['/','/firmalar','/ara','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
   hekim:     ['/','/saglik','/hekim','/koordinasyon','/arsiv'],
-  satis:     ['/','/firmalar','/teklifler','/malzemeler','/tedarikciler'],
+  satis:     ['/','/teklifler','/malzemeler','/tedarikciler'],
   muhasebe:  ['/','/tahsilat','/saglik','/fatura'],
-  saha:      ['/','/koordinasyon','/firmalar','/ziyaretler','/arsiv'],
+  saha:      ['/','/koordinasyon','/ziyaretler','/arsiv'],
 }
 
 const TUM_LINKLER = [
   { href:'/', label:'Dashboard', icon:LayoutDashboard },
+  { href:'/ara', label:'Global Arama', icon:SearchIcon },
   { href:'/firmalar', label:'Firmalar', icon:Building2 },
   { href:'/koordinasyon', label:'Görev Takibi', icon:CalendarDays },
   { href:'/teklifler', label:'Teklifler', icon:FileText },
@@ -34,6 +36,7 @@ const TUM_LINKLER = [
   { href:'/raporlar', label:'Raporlar', icon:BarChart2 },
   { href:'/personeller', label:'Personel & Yetkiler', icon:UserCog },
   { href:'/eksik-veriler', label:'Eksik Veriler', icon:AlertTriangle },
+  { href:'/site', label:'Site Yönetimi', icon:LayoutDashboard },
 ]
 
 export default function MobileTopbar() {
@@ -106,32 +109,23 @@ export default function MobileTopbar() {
         .mob-drawer-overlay.open { display: block; }
       `}</style>
 
-      {/* TOP BAR */}
       <div className="mob-topbar">
-        {/* Sol: hamburger */}
         <button onClick={() => setAcik(true)}
           style={{ background:'none', border:'none', color:'var(--text)', cursor:'pointer', padding:8, display:'flex', alignItems:'center' }}>
           <Menu size={24} />
         </button>
-
-        {/* Orta: sayfa adı */}
         <span style={{ fontFamily:'Sora,sans-serif', fontWeight:600, fontSize:15, color:'var(--text)' }}>
           {aktif?.label || 'OSGB'}
         </span>
-
-        {/* Sağ: çıkış butonu */}
         <button onClick={cikis}
           style={{ background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer', padding:8, display:'flex', alignItems:'center', gap:4 }}>
           <LogOut size={20} />
         </button>
       </div>
 
-      {/* OVERLAY */}
       <div className={`mob-drawer-overlay ${acik ? 'open' : ''}`} onClick={() => setAcik(false)} />
 
-      {/* DRAWER */}
       <div className={`mob-drawer ${acik ? 'open' : ''}`}>
-        {/* Header */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 18px', borderBottom:'1px solid var(--border)', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <div style={{ width:34, height:34, borderRadius:10, background:'var(--accent-soft)', color:'var(--accent)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:15, flexShrink:0 }}>
@@ -148,7 +142,6 @@ export default function MobileTopbar() {
           </button>
         </div>
 
-        {/* Nav */}
         <nav style={{ flex:1, overflowY:'auto', padding:'8px 10px' }}>
           {linkler.map(l => {
             const Icon = l.icon
@@ -167,7 +160,6 @@ export default function MobileTopbar() {
           })}
         </nav>
 
-        {/* Çıkış — drawer altında da var */}
         <div style={{ padding:'14px 18px', borderTop:'1px solid var(--border)', flexShrink:0 }}>
           <button onClick={cikis}
             style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
