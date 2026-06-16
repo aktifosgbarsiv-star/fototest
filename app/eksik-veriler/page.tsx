@@ -58,7 +58,7 @@ export default function EksikVerilerPage() {
       .select('id, unvan, sgk_sicil, telefon, yetkili, tehlike_sinifi')
       .eq('aktif', true)
 
-    const firmalar = firmalarData || []
+    const firmalar = (firmalarData || []) as EksikFirma[]
     const sicilBos = firmalar.filter(f => !f.sgk_sicil || f.sgk_sicil === '')
     const telefonBos = firmalar.filter(f => !f.telefon || f.telefon === '')
     const yetkiliBos = firmalar.filter(f => !f.yetkili || f.yetkili === '')
