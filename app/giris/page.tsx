@@ -4,6 +4,15 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Lock, Mail, ShieldCheck } from 'lucide-react'
 
+const ROL_ANA_SAYFA: Record<string, string> = {
+  yonetici:  '/firmalar',
+  operasyon: '/firmalar',
+  hekim:     '/saglik',
+  satis:     '/teklifler',
+  muhasebe:  '/tahsilat',
+  saha:      '/koordinasyon',
+}
+
 export default function Giris() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -17,7 +26,16 @@ export default function Giris() {
     const sb = createClient()
     const { error } = await sb.auth.signInWithPassword({ email, password: sifre })
     if (error) { setHata('E-posta veya şifre hatalı.'); setYukleniyor(false); return }
-    router.push('/firmalar'); router.refresh()
+    // Rol bazlı yönlendirme
+    const { data: { user } } = await sb.auth.getUser()
+    if (user) {
+      const { data: p } = await sb.from('personeller').select('rol').eq('id', user.id).single()
+      const rol = p?.rol || 'operasyon'
+      router.push(ROL_ANA_SAYFA[rol] || '/firmalar')
+    } else {
+      router.push('/firmalar')
+    }
+    router.refresh()
   }
 
   return (
