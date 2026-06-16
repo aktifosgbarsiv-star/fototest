@@ -110,8 +110,7 @@
     { "source": "/feed/", "destination": "/yazilarimiz", "permanent": true },
     { "source": "/comments/feed", "destination": "/yazilarimiz", "permanent": true },
     { "source": "/comments/feed/", "destination": "/yazilarimiz", "permanent": true },
-    { "source": "/?p=:id", "destination": "/", "permanent": true },
-    { "source": "/?page_id=:id", "destination": "/", "permanent": true },
+
     { "source": "/xmlrpc.php", "destination": "/", "permanent": true },
     { "source": "/sitemap_index.xml", "destination": "/sitemap.xml", "permanent": true },
     { "source": "/post-sitemap.xml", "destination": "/sitemap.xml", "permanent": true },
