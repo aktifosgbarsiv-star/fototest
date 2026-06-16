@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import { Shell } from '@/components/Shell'
+import Shell from '@/components/Shell'
 import { LOCAL_BUSINESS_SCHEMA } from '@/lib/seo'
 
 export const metadata: Metadata = {
