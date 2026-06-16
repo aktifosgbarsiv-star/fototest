@@ -12,7 +12,8 @@ async function getReferanslar() {
 }
 
 export default function Referanslar() {
-  const referanslar = await getReferanslar()
+  const [referanslar, setReferanslar] = useState<any>(null)
+  useEffect(() => { getReferanslar().then(setReferanslar) }, [])
   return (
     <div style={{ background: '#f8f8f6', minHeight: '100vh', width: '100%', color: '#1a1a2e', fontFamily: "'Inter',-apple-system,system-ui,sans-serif" }}>
       <SiteNav />
