@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Globe, Settings, Layers, Users, Award, FileText, MessageSquare, ArrowRight, Plus, Trash2, Pencil, X, Check, Upload, Image, ChevronUp, ChevronDown, Eye, EyeOff } from 'lucide-react'
+import { Globe, Settings, Layers, Users, Award, FileText, MessageSquare, ArrowRight, Plus, Trash2, Pencil, X, Check, Upload, Image, ChevronUp, ChevronDown, Eye, EyeOff, Shield } from 'lucide-react'
 
 const sb = createClient()
 
@@ -15,6 +15,7 @@ const SEKMELER = [
   { id: 'referanslar', label: 'Referanslar', icon: Globe },
   { id: 'yazilar', label: 'Yazılar', icon: FileText },
   { id: 'talepler', label: 'Teklif Talepleri', icon: MessageSquare },
+  { id: 'tehlike', label: 'Tehlike Sınıfları', icon: Shield },
 ]
 
 // Resim yükleme yardımcı fonksiyon
@@ -101,6 +102,15 @@ export default function SiteYonetim() {
   // Talepler
   const [talepler, setTalepler] = useState<any[]>([])
 
+  // Tehlike Sınıfları
+  const [tehlikeler, setTehlikeler] = useState<any[]>([])
+  const [tehlikeArama, setTehlikeArama] = useState('')
+  const [tehlikeFiltre, setTehlikeFiltre] = useState('Tümü')
+  const [tehlikeModal, setTehlikeModal] = useState<any>(null)
+  const [tehlikeForm, setTehlikeForm] = useState({ kod: '', tanim: '', sinif: 'Tehlikeli' })
+  const [excelYukleniyor, setExcelYukleniyor] = useState(false)
+  const excelRef = typeof window !== 'undefined' ? require('react').createRef<HTMLInputElement>() : null
+
   useEffect(() => { yukle() }, [sekme])
 
   async function yukle() {
@@ -133,6 +143,9 @@ export default function SiteYonetim() {
       } else if (sekme === 'talepler') {
         const { data } = await sb.from('site_teklif_talepleri').select('*').order('olusturuldu_at', { ascending: false })
         setTalepler(data || [])
+      } else if (sekme === 'tehlike') {
+        const { data } = await sb.from('tehlike_siniflari').select('*').order('kod')
+        setTehlikeler(data || [])
       }
     } catch (e) { console.error(e) }
     setYukleniyor(false)
@@ -275,6 +288,58 @@ export default function SiteYonetim() {
   async function yaziToggle(item: any) {
     await sb.from('site_yazilar').update({ yayinda: !item.yayinda }).eq('id', item.id)
     yukle()
+  }
+
+  // TEHLİKE SINIFLARI
+  async function tehlikeKaydet() {
+    if (!tehlikeForm.kod || !tehlikeForm.tanim) { alert('Kod ve tanım zorunludur'); return }
+    if (tehlikeModal?.id) {
+      await sb.from('tehlike_siniflari').update(tehlikeForm).eq('id', tehlikeModal.id)
+    } else {
+      await sb.from('tehlike_siniflari').insert(tehlikeForm)
+    }
+    setTehlikeModal(null)
+    yukle()
+    goster('Kaydedildi')
+  }
+  async function tehlikeSil(id: number) {
+    if (!confirm('Silinsin mi?')) return
+    await sb.from('tehlike_siniflari').delete().eq('id', id)
+    yukle()
+  }
+  async function excelYukle(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setExcelYukleniyor(true)
+    try {
+      const XLSX = await import('xlsx')
+      const buf = await file.arrayBuffer()
+      const wb = XLSX.read(buf)
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const raw: any[] = XLSX.utils.sheet_to_json(ws, { header: 1 })
+      const kayitlar: any[] = []
+      for (const row of raw) {
+        const kod = String(row[0] || '').trim()
+        const tanim = String(row[1] || '').trim()
+        const sinif = String(row[2] || '').trim()
+        if (kod.includes('.') && tanim && ['Az Tehlikeli','Tehlikeli','Çok Tehlikeli'].includes(sinif)) {
+          kayitlar.push({ kod, tanim, sinif })
+        }
+      }
+      if (kayitlar.length === 0) { alert('Geçerli kayıt bulunamadı'); setExcelYukleniyor(false); return }
+      // Önce truncate, sonra insert
+      await sb.from('tehlike_siniflari').delete().neq('id', 0)
+      const chunkSize = 100
+      for (let i = 0; i < kayitlar.length; i += chunkSize) {
+        await sb.from('tehlike_siniflari').insert(kayitlar.slice(i, i + chunkSize))
+      }
+      yukle()
+      goster(`${kayitlar.length} kayıt yüklendi`)
+    } catch (err: any) {
+      alert('Hata: ' + err.message)
+    }
+    setExcelYukleniyor(false)
+    e.target.value = ''
   }
 
   // TALEPLER
@@ -551,6 +616,118 @@ export default function SiteYonetim() {
             </div>
           ))}
           {talepler.length === 0 && <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-faint)' }}>Henüz teklif talebi yok</div>}
+        </div>
+      )}
+
+      {/* ========== TEHLİKE SINIFLARI ========== */}
+      {!yukleniyor && sekme === 'tehlike' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>{tehlikeler.length} kayıt</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input type="file" accept=".xlsx,.xls" style={{ display: 'none' }} id="excel-input"
+                onChange={excelYukle} />
+              <button onClick={() => document.getElementById('excel-input')?.click()}
+                disabled={excelYukleniyor}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
+                <Upload size={14} /> {excelYukleniyor ? 'Yükleniyor...' : 'Excel Yükle'}
+              </button>
+              <button onClick={() => { setTehlikeForm({ kod: '', tanim: '', sinif: 'Tehlikeli' }); setTehlikeModal({}) }}
+                className="btn" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px' }}>
+                <Plus size={14} /> Yeni Ekle
+              </button>
+            </div>
+          </div>
+
+          {/* Arama + Filtre */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+            <input value={tehlikeArama} onChange={e => setTehlikeArama(e.target.value)}
+              placeholder="Kod veya faaliyet ara..."
+              style={{ flex: 1, minWidth: 200, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }} />
+            {['Tümü','Az Tehlikeli','Tehlikeli','Çok Tehlikeli'].map(s => (
+              <button key={s} onClick={() => setTehlikeFiltre(s)}
+                style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid var(--border)', background: tehlikeFiltre === s ? 'var(--accent-soft)' : 'transparent', color: tehlikeFiltre === s ? 'var(--accent)' : 'var(--text-dim)', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>
+                {s}
+              </button>
+            ))}
+          </div>
+
+          {/* Tablo */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 140px 80px', padding: '8px 14px', background: 'var(--surface-2)', fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              <span>NACE Kodu</span><span>Faaliyet</span><span>Tehlike Sınıfı</span><span></span>
+            </div>
+            {tehlikeler
+              .filter(t => {
+                const uyan = !tehlikeArama || t.kod.includes(tehlikeArama) || t.tanim.toLowerCase().includes(tehlikeArama.toLowerCase())
+                const filtreli = tehlikeFiltre === 'Tümü' || t.sinif === tehlikeFiltre
+                return uyan && filtreli
+              })
+              .slice(0, 100)
+              .map((t, i) => (
+                <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 140px 80px', padding: '8px 14px', borderTop: i === 0 ? 'none' : '1px solid var(--border)', fontSize: 12, background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.01)' }}>
+                  <span style={{ fontFamily: 'monospace', color: 'var(--accent)', fontSize: 11 }}>{t.kod}</span>
+                  <span style={{ color: 'var(--text-dim)' }}>{t.tanim}</span>
+                  <span>
+                    <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600,
+                      background: t.sinif === 'Az Tehlikeli' ? 'rgba(34,197,94,.1)' : t.sinif === 'Tehlikeli' ? 'rgba(245,158,11,.1)' : 'rgba(239,68,68,.1)',
+                      color: t.sinif === 'Az Tehlikeli' ? '#22c55e' : t.sinif === 'Tehlikeli' ? '#f59e0b' : '#ef4444'
+                    }}>{t.sinif}</span>
+                  </span>
+                  <span style={{ display: 'flex', gap: 4 }}>
+                    <button onClick={() => { setTehlikeForm({ kod: t.kod, tanim: t.tanim, sinif: t.sinif }); setTehlikeModal(t) }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)', padding: 3 }}><Pencil size={13} /></button>
+                    <button onClick={() => tehlikeSil(t.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', padding: 3 }}><Trash2 size={13} /></button>
+                  </span>
+                </div>
+              ))}
+            {tehlikeler.filter(t => {
+              const uyan = !tehlikeArama || t.kod.includes(tehlikeArama) || t.tanim.toLowerCase().includes(tehlikeArama.toLowerCase())
+              return (tehlikeFiltre === 'Tümü' || t.sinif === tehlikeFiltre) && uyan
+            }).length > 100 && (
+              <div style={{ padding: '10px 14px', textAlign: 'center', fontSize: 12, color: 'var(--text-faint)', borderTop: '1px solid var(--border)' }}>
+                İlk 100 gösteriliyor, aramayı daraltın
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Tehlike Modal */}
+      {tehlikeModal !== null && (
+        <div className="modal-overlay" onClick={() => setTehlikeModal(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <h2 style={{ fontFamily: 'Sora,sans-serif', fontSize: 17, fontWeight: 700 }}>{tehlikeModal?.id ? 'Düzenle' : 'Yeni Kayıt'}</h2>
+              <button onClick={() => setTehlikeModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-dim)' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>NACE Kodu *</label>
+                <input value={tehlikeForm.kod} onChange={e => setTehlikeForm(f => ({ ...f, kod: e.target.value }))}
+                  placeholder="01.11.07" style={{ padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Faaliyet Tanımı *</label>
+                <textarea value={tehlikeForm.tanim} onChange={e => setTehlikeForm(f => ({ ...f, tanim: e.target.value }))}
+                  style={{ padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', minHeight: 80, resize: 'vertical' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 11, color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Tehlike Sınıfı *</label>
+                <select value={tehlikeForm.sinif} onChange={e => setTehlikeForm(f => ({ ...f, sinif: e.target.value }))}
+                  style={{ padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }}>
+                  <option>Az Tehlikeli</option>
+                  <option>Tehlikeli</option>
+                  <option>Çok Tehlikeli</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button onClick={tehlikeKaydet} className="btn" style={{ flex: 1, justifyContent: 'center', padding: 12 }}>Kaydet</button>
+              <button onClick={() => setTehlikeModal(null)} style={{ padding: '12px 20px', borderRadius: 9, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-dim)', cursor: 'pointer', fontFamily: 'inherit' }}>İptal</button>
+            </div>
+          </div>
         </div>
       )}
 
