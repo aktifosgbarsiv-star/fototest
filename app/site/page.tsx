@@ -329,8 +329,8 @@ export default function SiteYonetim() {
         }
       }
       if (kayitlar.length === 0) { alert('Geçerli kayıt bulunamadı'); setExcelYukleniyor(false); return }
-      // Önce truncate, sonra insert
-      await sb.from('tehlike_siniflari').delete().neq('id', 0)
+      // Önce tümünü sil, sonra insert
+      await sb.from('tehlike_siniflari').delete().gte('id', 0)
       const chunkSize = 100
       for (let i = 0; i < kayitlar.length; i += chunkSize) {
         await sb.from('tehlike_siniflari').insert(kayitlar.slice(i, i + chunkSize))
