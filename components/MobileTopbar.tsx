@@ -9,11 +9,11 @@ const ROL_AD: any = { yonetici:'Yönetici', operasyon:'Operasyon', hekim:'Hekim'
 
 const ERISIM: any = {
   yonetici:  ['/dashboard','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site','/site/ramak-kala'],
-  operasyon: ['/dashboard','/firmalar','/ara','/saglik','/koordinasyon','/ziyaretler','/taramalar','/arsiv'],
-  hekim:     ['/dashboard','/saglik','/hekim','/koordinasyon','/arsiv'],
+  operasyon: ['/dashboard','/firmalar','/saglik','/koordinasyon','/ziyaretler','/taramalar','/arsiv'],
+  hekim:     ['/dashboard','/koordinasyon','/saglik'],
   satis:     ['/dashboard','/firmalar','/koordinasyon','/ziyaretler','/teklifler','/tahsilat'],
   muhasebe:  ['/dashboard','/firmalar','/koordinasyon','/saglik','/ziyaretler','/teklifler','/tahsilat'],
-  saha:      ['/dashboard','/koordinasyon','/saglik','/ziyaretler','/arsiv'],
+  saha:      ['/dashboard','/koordinasyon','/ziyaretler','/arsiv'],
 }
 
 const TUM_LINKLER = [
