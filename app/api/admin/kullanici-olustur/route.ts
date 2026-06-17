@@ -77,3 +77,26 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
+
+// PATCH — şifre güncelle
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const { id, password, secret } = body
+
+    if (secret !== (process.env.ADMIN_SECRET || 'osgb-admin-2026')) {
+      return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 })
+    }
+    if (!id || !password || password.length < 6) {
+      return NextResponse.json({ error: 'ID ve en az 6 karakterli şifre zorunludur' }, { status: 400 })
+    }
+
+    const admin = getAdmin()
+    const { error } = await admin.auth.admin.updateUserById(id, { password })
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+    return NextResponse.json({ ok: true })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}
