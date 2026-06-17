@@ -6,11 +6,11 @@ const BAKIM_MODU = false
 
 const ROL_ERISIM: Record<string, string[]> = {
   yonetici:  ['/dashboard','/firmalar','/ara','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site'],
-  operasyon: ['/dashboard','/firmalar','/ara','/koordinasyon','/idari','/ziyaretler','/taramalar','/eksik-veriler','/arsiv'],
-  hekim:     ['/saglik','/hekim','/koordinasyon','/arsiv'],
-  satis:     ['/teklifler','/malzemeler','/tedarikciler'],
-  muhasebe:  ['/tahsilat','/saglik','/fatura'],
-  saha:      ['/koordinasyon','/ziyaretler','/arsiv'],
+  operasyon: ['/dashboard','/firmalar','/ara','/saglik','/koordinasyon','/ziyaretler','/taramalar','/arsiv'],
+  hekim:     ['/dashboard','/saglik','/hekim','/koordinasyon','/arsiv'],
+  satis:     ['/dashboard','/firmalar','/koordinasyon','/ziyaretler','/teklifler','/tahsilat'],
+  muhasebe:  ['/dashboard','/firmalar','/koordinasyon','/saglik','/ziyaretler','/teklifler','/tahsilat'],
+  saha:      ['/dashboard','/koordinasyon','/saglik','/ziyaretler','/arsiv'],
 }
 
 const ROL_ANA_SAYFA: Record<string, string> = {
