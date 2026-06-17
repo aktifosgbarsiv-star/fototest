@@ -188,13 +188,13 @@ export default function Personeller() {
         <div style={{ overflowX:'auto' }}>
           <table>
             <thead>
-              <tr><th>Ad Soyad</th><th>Telefon</th><th>TC</th><th>Sertifika</th><th>Kase</th><th>Rol</th><th>Durum</th><th>Yetkiler</th><th></th></tr>
+              <tr><th>Ad Soyad</th><th>E-posta</th><th>Telefon</th><th>TC</th><th>Sertifika</th><th>Kase</th><th>Rol</th><th>Durum</th><th>Yetkiler</th><th></th></tr>
             </thead>
             <tbody>
               {yukleniyor
-                ? <tr><td colSpan={9} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Yükleniyor...</td></tr>
+                ? <tr><td colSpan={10} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Yükleniyor...</td></tr>
                 : personeller.length === 0
-                ? <tr><td colSpan={9} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Personel yok</td></tr>
+                ? <tr><td colSpan={10} style={{ textAlign:'center', color:'var(--text-faint)', padding:40 }}>Personel yok</td></tr>
                 : personeller.map(p => {
                   const erisim: any = {
                     yonetici:  'Tümü',
@@ -214,6 +214,7 @@ export default function Personeller() {
                           {p.ad_soyad}
                         </div>
                       </td>
+                      <td style={{ fontSize:12, color:'var(--text-dim)' }}>{p.email||'—'}</td>
                       <td style={{ fontSize:12, color:'var(--text-dim)' }}>{p.telefon||'—'}</td>
                       <td style={{ fontSize:11, fontFamily:'monospace', color:'var(--text-faint)' }}>{p.tc||'—'}</td>
                       <td style={{ fontSize:11, color:'var(--text-dim)' }}>
