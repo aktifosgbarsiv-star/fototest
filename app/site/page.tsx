@@ -322,7 +322,9 @@ export default function SiteYonetim() {
         const kod = String(row[0] || '').trim()
         const tanim = String(row[1] || '').trim()
         const sinif = String(row[2] || '').trim()
-        if (kod.includes('.') && tanim && ['Az Tehlikeli','Tehlikeli','Çok Tehlikeli'].includes(sinif)) {
+        // Başlık ve açıklama satırlarını atla, sadece geçerli NACE kodlarını al
+        // NACE kodu: en az bir nokta içermeli ve rakamla başlamalı
+        if (/^\d/.test(kod) && kod.includes('.') && tanim && ['Az Tehlikeli','Tehlikeli','Çok Tehlikeli'].includes(sinif)) {
           kayitlar.push({ kod, tanim, sinif })
         }
       }
