@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient as sb } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 import SiteNav from '@/components/site/SiteNav'
 import SiteFooter from '@/components/site/SiteFooter'
 import HeroSlider from '@/components/site/HeroSlider'
@@ -12,7 +12,7 @@ export const metadata = {
 }
 
 async function getData() {
-  const client = sb(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  const client = createClient()
   const [ayarlar, hizmetler, egitimler, yazilar] = await Promise.all([
     client.from('site_ayarlar').select('anahtar,deger').then(r => {
       const a: Record<string,string> = {}
