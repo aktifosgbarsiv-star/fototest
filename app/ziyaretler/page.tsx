@@ -184,7 +184,8 @@ export default function Ziyaretler() {
   function Tick({ firma, ayIdx, tur }: { firma: any, ayIdx: number, tur: 'igu'|'ih' }) {
     const durum = ziyaretDurumu(firma, ayIdx, tur)
     const bilgi = getZiyaret(firma, ayIdx, tur)
-    const tiklanabilir = yazabilir || (firma.gorevli_igu?.includes(mevcutPersonel?.ad_soyad) || firma.gorevli_ih?.includes(mevcutPersonel?.ad_soyad))
+    const kendiniFirma = firma.gorevli_igu?.includes(mevcutPersonel?.ad_soyad) || firma.gorevli_ih?.includes(mevcutPersonel?.ad_soyad)
+    const tiklanabilir = rol === 'yonetici' || (['operasyon', 'saha'].includes(rol) && kendiniFirma)
 
     if (durum === 'gelecek') {
       if (rol === 'yonetici') {
@@ -214,8 +215,8 @@ export default function Ziyaretler() {
     }
     // gidilmedi
     return (
-      <div onClick={() => tiklanabilir && yazabilir ? setModal({ firma, ayIdx, tur }) : null}
-        style={{ width:20, height:20, border:'2px solid rgba(255,255,255,0.35)', borderRadius:4, margin:'0 auto', cursor:tiklanabilir&&yazabilir?'pointer':'default', background:'transparent', transition:'border-color 0.15s' }}/>
+      <div onClick={() => tiklanabilir ? setModal({ firma, ayIdx, tur }) : null}
+        style={{ width:20, height:20, border:'2px solid rgba(255,255,255,0.35)', borderRadius:4, margin:'0 auto', cursor:tiklanabilir?'pointer':'default', background:'transparent', transition:'border-color 0.15s' }}/>
     )
   }
 
