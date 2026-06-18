@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { csvIndir } from '@/lib/csvExport'
 import { Plus, Search, X, Building2, Trash2, Pencil, Upload, Download } from 'lucide-react'
+import { useIzin } from '@/lib/useIzin'
 import * as XLSX from 'xlsx'
 
 const TEHLIKE_RENK: any = { 'Az Tehlikeli':'var(--green)', 'Tehlikeli':'var(--amber)', 'Çok Tehlikeli':'var(--red)' }
@@ -27,6 +28,7 @@ export default function Firmalar() {
   const [yukleniyor, setYukleniyor] = useState(true)
   const [hata, setHata] = useState('')
   const [form, setForm] = useState<any>(bosForm())
+  const izin = useIzin('firmalar')
   const [kulRol, setKulRol] = useState<string>('operasyon')
   const [pasifModal, setPasifModal] = useState<any>(null) // { firma }
   const [katipExcelModal, setKatipExcelModal] = useState(false)
@@ -409,7 +411,7 @@ export default function Firmalar() {
           <button onClick={()=>{ setKatipExcelModal(true); setKatipExcelSonuc([]); setKatipExcelAy(new Date().getFullYear()+'-'+(new Date().getMonth()+1).toString().padStart(2,'0')) }} style={{ padding:'8px 14px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', cursor:'pointer', color:'var(--text-dim)', fontSize:13, display:'flex', alignItems:'center', gap:6, fontFamily:'inherit' }}>
             <Upload size={14}/> Katip Excel
           </button>
-          <button className="btn" onClick={()=>{ setDuzenle(null); setForm(bosForm()); setSekme('temel'); setModal(true) }}><Plus size={18}/> Yeni Firma</button>
+          {izin.duzenle && <button className="btn" onClick={()=>{ setDuzenle(null); setForm(bosForm()); setSekme('temel'); setModal(true) }}><Plus size={18}/> Yeni Firma</button>}
         </div>
       </div>
 
@@ -575,7 +577,7 @@ export default function Firmalar() {
                   </>)}
                   <td onClick={e=>e.stopPropagation()}>
                     <div style={{ display:'flex', gap:4 }}>
-                      <button onClick={()=>duzenleAc(f)} style={{ background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer', padding:4 }}><Pencil size={14}/></button>
+                      {izin.duzenle && <button onClick={()=>duzenleAc(f)} style={{ background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer', padding:4 }}><Pencil size={14}/></button>}
                       {kulRol === 'yonetici' && (
                         f.aktif !== false
                           ? <button onClick={(e)=>{ e.stopPropagation(); setPasifModal(f); setPasifNeden('') }} title="Pasife Al" style={{ background:'none', border:'none', color:'var(--amber)', cursor:'pointer', padding:4, fontSize:11, fontWeight:600 }}>Pasif</button>
@@ -598,7 +600,7 @@ export default function Firmalar() {
             <div style={mHead}>
               <h2 style={mTitle}><Building2 size={20} color="var(--blue)"/> {detay.unvan}</h2>
               <div style={{ display:'flex', gap:8 }}>
-                <button onClick={()=>{ setDetay(null); duzenleAc(detay) }} style={{ background:'var(--surface-2)', border:'1px solid var(--border)', color:'var(--text-dim)', borderRadius:8, padding:'6px 10px', cursor:'pointer', fontSize:13, display:'flex', alignItems:'center', gap:6 }}><Pencil size={13}/> Düzenle</button>
+                {izin.duzenle && <button onClick={()=>{ setDetay(null); duzenleAc(detay) }} style={{ background:'var(--surface-2)', border:'1px solid var(--border)', color:'var(--text-dim)', borderRadius:8, padding:'6px 10px', cursor:'pointer', fontSize:13, display:'flex', alignItems:'center', gap:6 }}><Pencil size={13}/> Düzenle</button>}
                 <button onClick={()=>setDetay(null)} style={xBtn}><X size={22}/></button>
               </div>
             </div>
