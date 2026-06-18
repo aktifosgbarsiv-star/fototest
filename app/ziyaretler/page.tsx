@@ -5,11 +5,13 @@ import { createClient } from '@/lib/supabase'
 import { Search, X, ChevronLeft, ChevronRight, MapPin, Download } from 'lucide-react'
 import { useIzin } from '@/lib/useIzin'
 import { csvIndir } from '@/lib/csvExport'
+import { useIzin } from '@/lib/useIzin'
 
 const AYLAR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
 const AYLAR_FULL = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']
 
 export default function Ziyaretler() {
+  const izin = useIzin('ziyaretler')
   const izin = useIzin('ziyaretler')
   const [firmalar, setFirmalar] = useState<any[]>([])
   const [mevcutPersonel, setMevcutPersonel] = useState<any>(null)
@@ -165,7 +167,8 @@ export default function Ziyaretler() {
   const buAy = simdi.getMonth()
   const buYil = simdi.getFullYear()
   const rol = mevcutPersonel?.rol || 'operasyon'
-  const yazabilir = !['saha', 'muhasebe', 'satis'].includes(rol)
+  const izinDuzenle = izin?.duzenle ?? !['saha', 'muhasebe', 'satis'].includes(rol)
+  const yazabilir = izinDuzenle
 
   const istatistik = (() => {
     let buAyZiyaretSayisi = 0
@@ -187,10 +190,10 @@ export default function Ziyaretler() {
     const durum = ziyaretDurumu(firma, ayIdx, tur)
     const bilgi = getZiyaret(firma, ayIdx, tur)
     const kendiniFirma = firma.gorevli_igu?.includes(mevcutPersonel?.ad_soyad) || firma.gorevli_ih?.includes(mevcutPersonel?.ad_soyad)
-    const tiklanabilir = rol === 'yonetici' || (['operasyon', 'saha'].includes(rol) && kendiniFirma)
+    const tiklanabilir = rol === 'yonetici' || izinDuzenle || (['operasyon', 'saha'].includes(rol) && kendiniFirma)
 
     if (durum === 'gelecek') {
-      if (rol === 'yonetici') {
+      if (rol === 'yonetici' || izinDuzenle) {
         return (
           <div onClick={() => setModal({ firma, ayIdx, tur })}
             style={{ width:18, height:18, border:'2px dashed rgba(255,255,255,0.2)', borderRadius:4, margin:'0 auto', opacity:0.5, cursor:'pointer' }}/>
@@ -207,7 +210,7 @@ export default function Ziyaretler() {
       )
     }
     if (durum === 'gerekmiyor') {
-      if (rol === 'yonetici') {
+      if (rol === 'yonetici' || izinDuzenle) {
         return (
           <div onClick={() => setModal({ firma, ayIdx, tur })}
             style={{ width:18, height:18, border:'2px dashed rgba(255,255,255,0.15)', borderRadius:4, margin:'0 auto', opacity:0.4, cursor:'pointer' }}/>
