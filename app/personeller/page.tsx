@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { csvIndir } from '@/lib/csvExport'
 import { Plus, X, Users, Trash2, Pencil, Shield, KeyRound } from 'lucide-react'
-import { MODUL_LISTESI, getRolDefaults, type IzinMap } from '@/lib/izinler'
+import { MODUL_LISTESI, getRolDefaults, getModulIzinAlanlari, type IzinMap, type ModulIzin } from '@/lib/izinler'
 
 const ROLLER = ['yonetici','operasyon','hekim','satis','muhasebe','saha']
 const ROL_AD: any = { yonetici:'Yönetici', operasyon:'Operasyon', hekim:'Hekim', satis:'Satış', muhasebe:'Muhasebe', saha:'Saha Uzmanı' }
@@ -147,14 +147,18 @@ export default function Personeller() {
     setYetkiForm(mevcutIzinler)
   }
 
-  function yetkiToggle(modul: string, alan: 'goruntur' | 'duzenle') {
+  function yetkiToggle(modul: string, alan: keyof ModulIzin) {
     setYetkiForm(prev => {
-      const mevcut = prev[modul as keyof IzinMap] || { goruntur: false, duzenle: false }
-      let yeni = { ...mevcut, [alan]: !mevcut[alan] }
-      // Düzenle açılırsa görüntüleme de açık olmalı
-      if (alan === 'duzenle' && yeni.duzenle) yeni.goruntur = true
-      // Görüntüleme kapatılırsa düzenleme de kapanır
-      if (alan === 'goruntur' && !yeni.goruntur) yeni.duzenle = false
+      const mevcut = prev[modul as keyof IzinMap] || { goruntur: false, duzenle: false, dosya_yukle: false, sil: false }
+      let yeni = { ...mevcut, [alan]: !(mevcut as any)[alan] }
+      // Herhangi bir aksiyon açılırsa görüntüleme de açık olmalı
+      if (alan !== 'goruntur' && (yeni as any)[alan]) yeni.goruntur = true
+      // Görüntüleme kapatılırsa tüm aksiyonlar kapanır
+      if (alan === 'goruntur' && !yeni.goruntur) {
+        yeni.duzenle = false
+        ;(yeni as any).dosya_yukle = false
+        ;(yeni as any).sil = false
+      }
       return { ...prev, [modul]: yeni }
     })
   }
@@ -324,56 +328,63 @@ export default function Personeller() {
               Boş bırakılan modüller için rol varsayılanı uygulanır. Özel izin tanımladığınızda o modül için rol yerine bu ayar geçerli olur.
             </div>
 
-            {/* BAŞLIK SATIRI */}
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 90px 90px', gap:8, padding:'6px 10px', marginBottom:4 }}>
+            {/* BAŞLIK SATIRI — dinamik, modüle göre değişir */}
+            <div style={{ display:'grid', gridTemplateColumns:'1fr repeat(4, 72px)', gap:4, padding:'6px 10px', marginBottom:4 }}>
               <span style={{ fontSize:11, color:'var(--text-faint)', fontWeight:600, textTransform:'uppercase' }}>Modül</span>
               <span style={{ fontSize:11, color:'var(--text-faint)', fontWeight:600, textTransform:'uppercase', textAlign:'center' }}>Göster</span>
               <span style={{ fontSize:11, color:'var(--text-faint)', fontWeight:600, textTransform:'uppercase', textAlign:'center' }}>Düzenle</span>
+              <span style={{ fontSize:11, color:'var(--text-faint)', fontWeight:600, textTransform:'uppercase', textAlign:'center' }}>Dosya</span>
+              <span style={{ fontSize:11, color:'var(--text-faint)', fontWeight:600, textTransform:'uppercase', textAlign:'center' }}>Sil</span>
             </div>
 
-            {/* MODÜL SATIRLARI */}
-            <div style={{ display:'flex', flexDirection:'column', gap:2, maxHeight:400, overflowY:'auto' }}>
+            {/* MODÜL SATIRLARI — modüle özel alanlar dinamik */}
+            <div style={{ display:'flex', flexDirection:'column', gap:2, maxHeight:420, overflowY:'auto' }}>
               {MODUL_LISTESI.map(({ key, label }) => {
-                const izin = yetkiForm[key] || { goruntur: false, duzenle: false }
+                const izin: ModulIzin = yetkiForm[key] || { goruntur: false, duzenle: false, dosya_yukle: false, sil: false }
+                const alanlar = getModulIzinAlanlari(key)
+                // Renk paleti her alan için
+                const ALAN_RENK: Record<string, string> = {
+                  goruntur: 'var(--green)', duzenle: 'var(--accent)',
+                  dosya_yukle: '#3b82f6', sil: 'var(--red)'
+                }
                 return (
                   <div key={key} style={{
-                    display:'grid', gridTemplateColumns:'1fr 90px 90px', gap:8,
-                    padding:'8px 10px', borderRadius:8,
+                    display:'grid', gridTemplateColumns:'1fr repeat(4, 72px)', gap:4,
+                    padding:'7px 10px', borderRadius:8,
                     background: izin.goruntur ? 'var(--surface-2)' : 'transparent',
                     alignItems:'center'
                   }}>
                     <span style={{ fontSize:13, color: izin.goruntur ? 'var(--text)' : 'var(--text-faint)' }}>
                       {label}
                     </span>
-                    <div style={{ display:'flex', justifyContent:'center' }}>
-                      <button
-                        onClick={() => yetkiToggle(key, 'goruntur')}
-                        style={{
-                          width:28, height:28, borderRadius:6, border:'none', cursor:'pointer',
-                          background: izin.goruntur ? 'var(--green)' : 'var(--surface)',
-                          color: izin.goruntur ? '#fff' : 'var(--text-faint)',
-                          fontSize:15, display:'flex', alignItems:'center', justifyContent:'center',
-                          outline: '1px solid var(--border)'
-                        }}
-                      >
-                        {izin.goruntur ? '✓' : ''}
-                      </button>
-                    </div>
-                    <div style={{ display:'flex', justifyContent:'center' }}>
-                      <button
-                        onClick={() => yetkiToggle(key, 'duzenle')}
-                        style={{
-                          width:28, height:28, borderRadius:6, border:'none', cursor:'pointer',
-                          background: izin.duzenle ? 'var(--accent)' : 'var(--surface)',
-                          color: izin.duzenle ? '#000' : 'var(--text-faint)',
-                          fontSize:15, display:'flex', alignItems:'center', justifyContent:'center',
-                          outline: '1px solid var(--border)',
-                          opacity: !izin.goruntur ? 0.4 : 1
-                        }}
-                      >
-                        {izin.duzenle ? '✓' : ''}
-                      </button>
-                    </div>
+                    {/* Her zaman 4 slot render et, aktif olmayan modül alanları disabled */}
+                    {(['goruntur','duzenle','dosya_yukle','sil'] as (keyof ModulIzin)[]).map(alan => {
+                      const aktif = alanlar.some(a => a.key === alan)
+                      const deger = !!(izin as any)[alan]
+                      const bagimliBozuk = alan !== 'goruntur' && !izin.goruntur
+                      return (
+                        <div key={alan} style={{ display:'flex', justifyContent:'center' }}>
+                          {aktif ? (
+                            <button
+                              onClick={() => yetkiToggle(key, alan)}
+                              title={alan === 'dosya_yukle' ? 'Dosya Yükle' : alan === 'sil' ? 'Sil' : alan}
+                              style={{
+                                width:26, height:26, borderRadius:6, border:'none', cursor: bagimliBozuk ? 'not-allowed' : 'pointer',
+                                background: deger ? ALAN_RENK[alan] : 'var(--surface)',
+                                color: deger ? (alan==='sil'?'#fff':'#000') : 'var(--text-faint)',
+                                fontSize:14, display:'flex', alignItems:'center', justifyContent:'center',
+                                outline: '1px solid var(--border)',
+                                opacity: bagimliBozuk ? 0.3 : 1
+                              }}
+                            >
+                              {deger ? '✓' : ''}
+                            </button>
+                          ) : (
+                            <div style={{ width:26, height:26, borderRadius:6, background:'var(--surface)', opacity:0.2, outline:'1px solid var(--border)' }}/>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 )
               })}
