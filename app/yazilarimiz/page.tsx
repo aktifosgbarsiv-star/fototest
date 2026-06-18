@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import SiteNav from '@/components/site/SiteNav'
 import SiteFooter from '@/components/site/SiteFooter'
+import SiteFloating from '@/components/site/SiteFloating'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 export const dynamic = 'force-dynamic'
@@ -48,6 +49,7 @@ export default function Yazilarimiz() {
           </div>
         )}
       </div>
+      <SiteFloating />
       <SiteFooter />
     </div>
   )
