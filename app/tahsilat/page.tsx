@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { csvIndir } from '@/lib/csvExport'
 import { Plus, Search, X, Wallet, AlertTriangle, Trash2, History } from 'lucide-react'
+import { useIzin } from '@/lib/useIzin'
 
 export default function Tahsilat() {
+  const izin = useIzin('tahsilat')
   const [cariler, setCariler] = useState<any[]>([])
   const [firmalar, setFirmalar] = useState<any[]>([])
   const [tahsilatlar, setTahsilatlar] = useState<any[]>([])
@@ -141,7 +143,7 @@ export default function Tahsilat() {
           {['Hepsi','Vadesi Geçen','Temiz'].map(b=><option key={b}>{b}</option>)}
         </select>
         <button onClick={exportCSV} style={{ padding:'10px 14px', background:'var(--surface)', border:'1px solid var(--border)', borderRadius:10, color:'var(--text-dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>↓ CSV</button>
-        <button className="btn" onClick={()=>setModal(true)}><Plus size={18} /> Yeni Cari</button>
+        {izin.duzenle && <button className="btn" onClick={()=>setModal(true)}><Plus size={18} /> Yeni Cari</button>}
       </div>
 
       <div style={{ display:'flex', gap:12, alignItems:'flex-start', background:'var(--accent-soft)', border:'1px solid rgba(99,102,241,0.1)', borderRadius:12, padding:'14px 16px', marginBottom:20 }}>
@@ -264,9 +266,9 @@ export default function Tahsilat() {
                   </td>
                   <td>
                     <div style={{ display:'flex', gap:6 }}>
-                      <button className="btn" style={{ padding:'6px 10px', fontSize:12 }} onClick={()=>setTahsilatModal(c)}>Tahsilat</button>
+                      {izin.duzenle && <button className="btn" style={{ padding:'6px 10px', fontSize:12 }} onClick={()=>setTahsilatModal(c)}>Tahsilat</button>}
                       <button onClick={()=>setGecmisModal(c)} title="Geçmiş" style={{ background:'var(--surface-2)', border:'1px solid var(--border)', color:'var(--text-dim)', borderRadius:8, padding:'6px 8px', cursor:'pointer' }}><History size={14} /></button>
-                      <button onClick={()=>cariSil(c.id)} title="Sil" style={{ background:'none', border:'none', color:'var(--text-faint)', cursor:'pointer', padding:4 }}><Trash2 size={14} /></button>
+                      {izin.duzenle && <button onClick={()=>cariSil(c.id)} title="Sil" style={{ background:'none', border:'none', color:'var(--text-faint)', cursor:'pointer', padding:4 }}><Trash2 size={14} /></button>}
                     </div>
                   </td>
                 </tr>
