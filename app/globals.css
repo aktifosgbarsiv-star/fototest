@@ -293,7 +293,10 @@
   }
 }
 
-/* Site sayfaları için açık tema override */
+/* Site sayfaları için açık tema */
 .site-page {
-  background: #f8f8f6 !important;
+  background: #f8f9fb !important;
+  color: #1a1a2e !important;
 }
+
+@media (max-width: 900px) { .snav-desk { display:none !important; } .snav-ham { display:flex !important; } .snav-teh { display:none !important; } }
