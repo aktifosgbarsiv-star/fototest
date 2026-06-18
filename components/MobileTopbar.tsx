@@ -4,16 +4,28 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { UserCog, Menu, X, LogOut, LayoutDashboard, Building2, HeartPulse, FileText, Wallet, ClipboardList, CalendarDays, MapPin, Stethoscope, Package, Truck, Activity, BarChart2, AlertTriangle, FolderArchive, SearchIcon } from 'lucide-react'
+import { getIzin, type IzinKey } from '@/lib/izinler'
 
 const ROL_AD: any = { yonetici:'Yönetici', operasyon:'İş Güvenliği Uzmanı', hekim:'Hekim', satis:'Sağlıkçı', muhasebe:'Muhasebe & Satış', saha:'ISG Koordinatör' }
 
-const ERISIM: any = {
-  yonetici:  ['/dashboard','/ara','/firmalar','/saglik','/teklifler','/tahsilat','/koordinasyon','/idari','/ziyaretler','/hekim','/malzemeler','/tedarikciler','/taramalar','/personeller','/raporlar','/fatura','/eksik-veriler','/arsiv','/site','/site/ramak-kala'],
-  operasyon: ['/dashboard','/firmalar','/saglik','/koordinasyon','/ziyaretler','/taramalar','/arsiv'],
-  hekim:     ['/dashboard','/koordinasyon','/saglik'],
-  satis:     ['/dashboard','/firmalar','/koordinasyon','/ziyaretler','/teklifler','/tahsilat','/saglik','/taramalar'],
-  muhasebe:  ['/dashboard','/firmalar','/koordinasyon','/saglik','/ziyaretler','/teklifler','/tahsilat','/taramalar'],
-  saha:      ['/dashboard','/koordinasyon','/ziyaretler','/arsiv'],
+const HREF_MODUL: Record<string, IzinKey> = {
+  '/firmalar':    'firmalar',
+  '/koordinasyon':'koordinasyon',
+  '/saglik':      'saglik',
+  '/ziyaretler':  'ziyaretler',
+  '/teklifler':   'teklifler',
+  '/tahsilat':    'tahsilat',
+  '/arsiv':       'arsiv',
+  '/taramalar':   'taramalar',
+  '/hekim':       'hekim',
+  '/malzemeler':  'malzemeler',
+  '/tedarikciler':'tedarikciler',
+  '/raporlar':    'raporlar',
+  '/fatura':      'fatura',
+  '/idari':       'idari',
+  '/personeller': 'personeller',
+  '/site':        'site',
+  '/site/ramak-kala': 'site',
 }
 
 const TUM_LINKLER = [
@@ -50,7 +62,7 @@ export default function MobileTopbar() {
     sb.auth.getUser().then(async ({ data }) => {
       if (data.user) {
         const { data: p } = await sb.from('personeller').select('*').eq('id', data.user.id).single()
-        setPersonel(p || { ad_soyad: data.user.email, rol: 'operasyon' })
+        setPersonel(p || { ad_soyad: data.user.email, rol: 'operasyon', izinler: {} })
       }
     })
   }, [])
@@ -63,8 +75,16 @@ export default function MobileTopbar() {
   }
 
   const rol = personel?.rol || 'operasyon'
-  const izinli = ERISIM[rol] || ERISIM.operasyon
-  const linkler = TUM_LINKLER.filter(l => izinli.includes(l.href))
+  const kisiselIzinler = personel?.izinler || {}
+
+  function linkGorunur(href: string): boolean {
+    if (href === '/dashboard' || href === '/ara' || href === '/eksik-veriler') return true
+    const modul = HREF_MODUL[href]
+    if (!modul) return true
+    return getIzin(modul, rol, kisiselIzinler).goruntur
+  }
+
+  const linkler = TUM_LINKLER.filter(l => linkGorunur(l.href))
   const aktif = TUM_LINKLER.find(l => l.href === pathname) || TUM_LINKLER.find(l => l.href !== '/' && pathname.startsWith(l.href + '/'))
 
   return (
