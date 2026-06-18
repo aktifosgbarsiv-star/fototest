@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { csvIndir } from '@/lib/csvExport'
 import { Plus, Search, X, FileText, Trash2 } from 'lucide-react'
+import { useIzin } from '@/lib/useIzin'
 
 const DURUMLAR = ['Beklemede','Görüşülüyor','Olumlu','Olumsuz']
 const DURUM_RENK: any = { Beklemede:'var(--amber)', Görüşülüyor:'var(--blue)', Olumlu:'var(--green)', Olumsuz:'var(--red)' }
@@ -15,6 +16,7 @@ const ILETIM = ['Whatsapp','Mail','Telefon','Yüz yüze']
 export default function Teklifler() {
   const [teklifler, setTeklifler] = useState<any[]>([])
   const [mevcutPersonel, setMevcutPersonel] = useState<any>(null)
+  const izin = useIzin('teklifler')
   const [arama, setArama] = useState('')
   const [turFiltre, setTurFiltre] = useState('Hepsi')
   const [filtre, setFiltre] = useState('Hepsi')
@@ -93,7 +95,7 @@ export default function Teklifler() {
           <p style={{ color:'var(--text-dim)', fontSize:14, marginTop:4 }}>{filtreli.length} teklif</p>
         </div>
         <button onClick={exportCSV} style={{ padding:'9px 14px', background:'var(--surface)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text-dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>↓ CSV</button>
-        <button className="btn" onClick={()=>setModal(true)}><Plus size={18}/> Yeni Teklif</button>
+        {izin.duzenle && <button className="btn" onClick={()=>setModal(true)}><Plus size={18}/> Yeni Teklif</button>}
       </div>
 
       {/* DURUM KARTLARI */}
@@ -185,7 +187,7 @@ export default function Teklifler() {
                     </td>
                     <td style={{ fontSize:12, color:'var(--text-dim)', maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.surec_notu||'—'}</td>
                     <td onClick={e => e.stopPropagation()}>
-                      {mevcutPersonel?.rol === 'yonetici' && <button onClick={() => sil(t.id)} style={{ background:'none', border:'none', color:'var(--text-faint)', cursor:'pointer', padding:4 }}><Trash2 size={14}/></button>}
+                      {izin.duzenle && <button onClick={() => sil(t.id)} style={{ background:'none', border:'none', color:'var(--text-faint)', cursor:'pointer', padding:4 }}><Trash2 size={14}/></button>}
                     </td>
                   </tr>
                 ))}
