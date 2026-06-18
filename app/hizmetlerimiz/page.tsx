@@ -21,7 +21,7 @@ export default function Hizmetlerimiz() {
         <div style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ width: 20, height: 2, background: '#6366f1', borderRadius: 2, display: 'inline-block' }} />Hizmetlerimiz
         </div>
-        <h1 style={{ fontSize: 'clamp(32px,5vw,52px)', fontWeight: 800, letterSpacing: -1.5, color: '#111118', marginBottom: 16, lineHeight: 1.1 }}>Kapsamlı OSGB Çözümleri</h1>
+        <h1 style={{ fontSize: 'clamp(32px,5vw,52px)', fontWeight: 800, letterSpacing: -1.5, color: '#f8f9fb', marginBottom: 16, lineHeight: 1.1 }}>Kapsamlı OSGB Çözümleri</h1>
         <p style={{ fontSize: 18, color: '#6b6b88', maxWidth: 560, lineHeight: 1.7, marginBottom: 64 }}>
           6331 sayılı İş Sağlığı ve Güvenliği Kanunu kapsamında işletmenize özel, eksiksiz hizmet paketi.
         </p>
