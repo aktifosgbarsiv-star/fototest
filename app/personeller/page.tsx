@@ -44,7 +44,7 @@ export default function Personeller() {
   async function yukle() {
     const { data, error } = await sb
       .from('personeller')
-      .select('id, ad_soyad, rol, aktif, telefon, tc, kase_no, sertifika_turu, sertifika_no, katip_toplam_dk, katip_kullanilan_dk, izinler')
+      .select('id, ad_soyad, rol, aktif, telefon, email, tc, kase_no, sertifika_turu, sertifika_no, katip_toplam_dk, katip_kullanilan_dk, izinler')
       .order('ad_soyad')
     if (error) { setHata('Yüklenemedi'); return }
     setPersoneller(data || [])
