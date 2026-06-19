@@ -44,6 +44,8 @@ export default function Ziyaretler() {
 
   async function yukle() {
     setYukleniyor(true)
+    // Saha/hekim rolünde sadece kendine atanmış firmalar gösterilir
+    const kisiselFirmaFiltresi = ['saha', 'hekim'].includes(p?.rol || '') && izin?.goruntur
     let q = sb.from('firmalar')
       .select('id, unvan, sgk_sicil, tehlike_sinifi, ih_periyot, gorevli_igu, gorevli_ih, gorevli_dsp, igu_atama_tarihi, ih_atama_tarihi, bhl_atama, igu_atama_durum, ih_atama_durum, bhl_atama_durum, aylik_ziyaretler')
       .eq('aktif', true)
@@ -63,7 +65,19 @@ export default function Ziyaretler() {
       q,
       sb.from('personeller').select('id, ad_soyad, rol').eq('aktif', true).order('ad_soyad')
     ])
-    setFirmalar((fData.data || []).filter((f: any) => f.ih_periyot !== 'GİDİLMİYOR'))
+    const tumFirmalar = (fData.data || []).filter((f: any) => f.ih_periyot !== 'GİDİLMİYOR')
+    // Saha ve hekim rolleri sadece kendi adlarının geçtiği firmaları görür
+    if (kisiselFirmaFiltresi && p?.ad_soyad) {
+      const ad = p.ad_soyad.trim().toUpperCase()
+      setFirmalar(tumFirmalar.filter((f: any) =>
+        (f.gorevli_igu || '').toUpperCase().includes(ad) ||
+        (f.gorevli_ih || '').toUpperCase().includes(ad) ||
+        (f.gorevli_dsp || '').toUpperCase().includes(ad) ||
+        (f.bhl_atama || '').toUpperCase().includes(ad)
+      ))
+    } else {
+      setFirmalar(tumFirmalar)
+    }
     setPersoneller(pData.data || [])
     setYukleniyor(false)
   }
