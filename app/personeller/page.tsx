@@ -87,7 +87,9 @@ export default function Personeller() {
   }
 
   async function rolGuncelle(id: string, rol: string) {
-    await sb.from('personeller').update({ rol }).eq('id', id)
+    // Rol değişince kişisel izinleri sıfırla — yeni rol default'u geçerli olsun
+    await sb.from('personeller').update({ rol, izinler: {} }).eq('id', id)
+    setBasari(`Rol güncellendi. Yeni rol default izinleri uygulandı.`)
     yukle()
   }
 
