@@ -120,7 +120,7 @@ const ROL_DEFAULTS: Record<string, IzinMap> = {
     site:        { goruntur: false, duzenle: false },
   },
   saha: {
-    firmalar:    { goruntur: false, duzenle: false },
+    firmalar:    { goruntur: true,  duzenle: true },
     koordinasyon:{ goruntur: true,  duzenle: true },
     saglik:      { goruntur: false, duzenle: false },
     ziyaretler:  { goruntur: true,  duzenle: true },
