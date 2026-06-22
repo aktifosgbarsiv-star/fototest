@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { csvIndir } from '@/lib/csvExport'
 import * as XLSX from 'xlsx'
-import { Plus, Search, X, HeartPulse, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Search, X, HeartPulse, Trash2, ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
 import { useIzin } from '@/lib/useIzin'
 
 const TETKIKLER = ['EK2','AKC','ODİO','SFT','EKG','CBC','AST','ALT','ÜRE','KREATİNİN','GLUKOZ','BURUN','BOĞAZ']
@@ -25,6 +25,7 @@ export default function Saglik() {
   const [basTarih, setBasTarih] = useState('')
   const [bitTarih, setBitTarih] = useState('')
   const [modal, setModal] = useState(false)
+  const [duzenle, setDuzenle] = useState<any>(null) // düzenleme modu - kayıt objesi
   const [detay, setDetay] = useState<any>(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [nextPrNo, setNextPrNo] = useState<number|null>(null)
@@ -117,16 +118,42 @@ export default function Saglik() {
   async function kaydet() {
     if (!form.ad_soyad) return
     setHata('')
-    const { error } = await sb.from('hasta_kayitlari').insert({
+    const payload = {
       ...form, ucret: Number(form.ucret) || 0,
       dogum_tarihi: form.dogum_tarihi || null,
       firma_id: form.firma_id || null,
       hekim_id: form.hekim_id || null,
       pr_no: form.pr_no ? Number(form.pr_no) : null,
       sube
+    }
+    if (duzenle) {
+      const { error } = await sb.from('hasta_kayitlari').update(payload).eq('id', duzenle.id)
+      if (error) { setHata(error.message); return }
+      setDuzenle(null)
+    } else {
+      const { error } = await sb.from('hasta_kayitlari').insert(payload)
+      if (error) { setHata(error.message); return }
+      setModal(false)
+    }
+    setForm(bosForm()); setSayfa(0); yukle()
+  }
+
+  function duzenleAc(k: any) {
+    setDetay(null)
+    setDuzenle(k)
+    setForm({
+      tarih: k.tarih || new Date().toISOString().slice(0,10),
+      ad_soyad: k.ad_soyad || '',
+      dogum_tarihi: k.dogum_tarihi || '',
+      telefon: k.telefon || '',
+      firma: k.firma || '',
+      firma_id: k.firma_id || '',
+      hekim_id: k.hekim_id || '',
+      ucret: k.ucret?.toString() || '',
+      odeme_sekli: k.odeme_sekli || 'Peşin',
+      tetkikler: k.tetkikler || {},
+      pr_no: k.pr_no?.toString() || '',
     })
-    if (error) { setHata(error.message); return }
-    setModal(false); setForm(bosForm()); setSayfa(0); yukle()
   }
 
   async function sil(id: string) {
@@ -339,7 +366,13 @@ export default function Saglik() {
       {detay && (
         <div className="modal-overlay" onClick={() => setDetay(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div style={mHead}><h2 style={mTitle}><HeartPulse size={20} color="var(--green)" /> Hasta Detayı</h2><button onClick={() => setDetay(null)} style={xBtn}><X size={22} /></button></div>
+            <div style={mHead}>
+              <h2 style={mTitle}><HeartPulse size={20} color="var(--green)" /> Hasta Detayı</h2>
+              <div style={{ display:'flex', gap:8 }}>
+                {izin.duzenle && <button onClick={() => duzenleAc(detay)} style={{ background:'var(--surface-2)', border:'1px solid var(--border)', color:'var(--text-dim)', borderRadius:8, padding:'6px 10px', cursor:'pointer', fontSize:13, display:'flex', alignItems:'center', gap:6 }}><Pencil size={13}/> Düzenle</button>}
+                <button onClick={() => setDetay(null)} style={xBtn}><X size={22} /></button>
+              </div>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[['Ad Soyad', detay.ad_soyad], ['Doğum Tarihi', detay.dogum_tarihi ? new Date(detay.dogum_tarihi + 'T00:00:00').toLocaleDateString('tr-TR') : '—'],
                 ['Telefon', detay.telefon || '—'], ['Firma', detay.firma || '—'],
@@ -359,10 +392,10 @@ export default function Saglik() {
       )}
 
       {/* Yeni Kayıt Modal */}
-      {modal && (
-        <div className="modal-overlay" onClick={() => setModal(false)}>
+      {(modal || duzenle) && (
+        <div className="modal-overlay" onClick={() => { setModal(false); setDuzenle(null) }}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div style={mHead}><h2 style={mTitle}><HeartPulse size={20} color="var(--green)" /> Yeni Hasta Kaydı</h2><button onClick={() => setModal(false)} style={xBtn}><X size={22} /></button></div>
+            <div style={mHead}><h2 style={mTitle}><HeartPulse size={20} color="var(--green)" /> {duzenle ? 'Kayıt Düzenle' : 'Yeni Hasta Kaydı'}</h2><button onClick={() => { setModal(false); setDuzenle(null) }} style={xBtn}><X size={22} /></button></div>
             <div className="modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div><label style={lbl}>Tarih</label><input type="date" value={form.tarih} onChange={e => setForm({ ...form, tarih: e.target.value })} /></div>
               <div><label style={lbl}>Ad Soyad *</label><input value={form.ad_soyad} onChange={e => setForm({ ...form, ad_soyad: e.target.value })} placeholder="Hasta adı" /></div>
@@ -408,8 +441,8 @@ export default function Saglik() {
             </div>
             {hata && <div style={{ background: 'var(--red-soft)', color: 'var(--red)', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>{hata}</div>}
             <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn-ghost btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setModal(false)}>İptal</button>
-              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={kaydet}>Kaydet</button>
+              <button className="btn-ghost btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setModal(false); setDuzenle(null) }}>İptal</button>
+              <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={kaydet}>{duzenle ? 'Güncelle' : 'Kaydet'}</button>
             </div>
           </div>
         </div>
