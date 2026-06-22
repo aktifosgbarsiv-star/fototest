@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
     const { error: pErr } = await admin.from('personeller').upsert({
       id: uid,
       ad_soyad,
+      email,
       rol,
       aktif: true,
     })
