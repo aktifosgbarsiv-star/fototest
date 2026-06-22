@@ -59,9 +59,20 @@ export default function Personeller() {
       const { error } = await sb.from('personeller').update({
         ad_soyad: form.ad_soyad,
         rol: form.rol,
-        aktif: form.aktif
+        aktif: form.aktif,
+        ...(form.email ? { email: form.email } : {})
       }).eq('id', duzenle.id)
       if (error) { setHata('Güncelleme hatası: ' + error.message); return }
+      // Email değiştiyse auth'ta da güncelle
+      if (form.email && form.email !== duzenle.email) {
+        const res = await fetch('/api/admin/kullanici-olustur', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: duzenle.id, email: form.email, secret: 'osgb-admin-2026' })
+        })
+        const data = await res.json()
+        if (!res.ok || data.error) { setHata('Email güncelleme hatası: ' + (data.error || '')); return }
+      }
       setBasari('Güncellendi.')
       setDuzenle(null)
       setModal(false)
@@ -135,7 +146,7 @@ export default function Personeller() {
 
   function duzenleAc(p: any) {
     setDuzenle(p)
-    setForm({ ad_soyad: p.ad_soyad, email:'', sifre:'', rol: p.rol, aktif: p.aktif })
+    setForm({ ad_soyad: p.ad_soyad, email: p.email || '', sifre:'', rol: p.rol, aktif: p.aktif })
     setModal(true)
   }
 
