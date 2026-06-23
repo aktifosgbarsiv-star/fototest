@@ -32,6 +32,7 @@ export default function Saglik() {
   const [hata, setHata] = useState('')
   const [form, setForm] = useState<any>(bosForm())
   const [sube, setSube] = useState<'merkez'|'sandikli'>('merkez')
+  const [kulSube, setKulSube] = useState<string>('her_ikisi')
   const [sayfa, setSayfa] = useState(0)
   const [toplamKayit, setToplamKayit] = useState(0)
   const debounceRef = useRef<any>(null)
@@ -60,8 +61,12 @@ export default function Saglik() {
     const sb2 = createClient()
     sb2.auth.getUser().then(async ({ data }) => {
       if (data.user) {
-        const { data: p } = await sb2.from('personeller').select('rol').eq('id', data.user.id).single()
+        const { data: p } = await sb2.from('personeller').select('rol, sube').eq('id', data.user.id).single()
         setMevcutRol(p?.rol || 'saha')
+        const ps = p?.sube || 'her_ikisi'
+        setKulSube(ps)
+        if (ps === 'sandikli') setSube('sandikli')
+        else if (ps === 'merkez') setSube('merkez')
       }
     })
   }, [])
@@ -108,8 +113,9 @@ export default function Saglik() {
   }, [aramaDebounced, hekimFiltre, odemeFiltre, basTarih, bitTarih, sayfa, sube])
 
   async function modalAc() {
-    const { data } = await sb.rpc('max_pr_no')
-    const next = data ? Number(data) + 1 : 1
+    const sb2 = createClient()
+    const { data: maxRow } = await sb2.from('hasta_kayitlari').select('pr_no').eq('sube', sube).order('pr_no', { ascending: false }).limit(1).single()
+    const next = maxRow?.pr_no ? Number(maxRow.pr_no) + 1 : 1
     setNextPrNo(next)
     setForm({ ...bosForm(), pr_no: String(next) })
     setModal(true)
@@ -255,17 +261,22 @@ export default function Saglik() {
 
       {/* ŞUBE SEKMELERİ */}
       <div style={{ display:'flex', gap:4, marginBottom:16, borderBottom:'1px solid var(--border)', paddingBottom:0 }}>
-        {([['merkez','🏥 Merkez'],['sandikli','🏨 Sandıklı']] as ['merkez'|'sandikli', string][]).map(([k,l]) => (
-          <button key={k} onClick={() => { setSube(k); setSayfa(0) }}
+        {([['merkez','🏥 Merkez'],['sandikli','🏨 Sandıklı']] as ['merkez'|'sandikli', string][]).map(([k,l]) => {
+          const kilitli = kulSube !== 'her_ikisi' && kulSube !== k
+          return (
+          <button key={k} onClick={() => { if (!kilitli) { setSube(k); setSayfa(0) } }}
+            title={kilitli ? 'Bu şubeye erişiminiz yok' : ''}
             style={{ padding:'8px 18px', borderRadius:'8px 8px 0 0', border:'1px solid var(--border)',
               borderBottom: sube===k ? '1px solid var(--surface)' : '1px solid var(--border)',
               background: sube===k ? 'var(--surface)' : 'transparent',
               color: sube===k ? 'var(--accent)' : 'var(--text-dim)',
-              cursor:'pointer', fontSize:13, fontWeight: sube===k ? 600 : 400, marginBottom:-1,
+              cursor: kilitli ? 'not-allowed' : 'pointer', opacity: kilitli ? 0.4 : 1,
+              fontSize:13, fontWeight: sube===k ? 600 : 400, marginBottom:-1,
               fontFamily:'inherit' }}>
             {l}
           </button>
-        ))}
+          )
+        })}
       </div>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'var(--green-soft)', border: '1px solid rgba(99,102,241,0.1)', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
