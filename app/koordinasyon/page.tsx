@@ -17,6 +17,7 @@ export default function Koordinasyon() {
   const [ziyaretlerData, setZiyaretlerData] = useState<any[]>([])
   const [personeller, setPersoneller] = useState<any[]>([])
   const [firmalar, setFirmalar] = useState<any[]>([])
+  const [firmaArama, setFirmaArama] = useState('')
   const [mevcutPersonel, setMevcutPersonel] = useState<any>(null)
   const [modal, setModal] = useState(false)
   const [duzenle, setDuzenle] = useState<any>(null)
@@ -536,10 +537,24 @@ export default function Koordinasyon() {
                 </select>
               </div>
               <div style={{ gridColumn:'1/3' }}><label style={lbl}>Firma (isteğe bağlı)</label>
-                <select value={form.firma_id} onChange={e => setForm({...form, firma_id: e.target.value})}>
-                  <option value="">Seçiniz...</option>
-                  {firmalar.map(f => <option key={f.id} value={f.id}>{f.unvan}</option>)}
-                </select>
+                <input value={firmaArama || (firmalar.find((f:any)=>f.id===form.firma_id)?.unvan||'')}
+                  onChange={e => { setFirmaArama(e.target.value); setForm({...form, firma_id:''}) }}
+                  placeholder="Firma ara..." style={{ width:'100%' }} />
+                {firmaArama && (
+                  <div style={{ maxHeight:180, overflowY:'auto', border:'1px solid var(--border)', borderRadius:8, marginTop:4, background:'var(--surface-2)' }}>
+                    {firmalar.filter((f:any)=>f.unvan.toLowerCase().includes(firmaArama.toLowerCase())).slice(0,20).map((f:any)=>(
+                      <div key={f.id} onClick={()=>{ setForm({...form, firma_id:f.id}); setFirmaArama('') }}
+                        style={{ padding:'10px 14px', cursor:'pointer', fontSize:13, borderBottom:'1px solid var(--border)' }}
+                        onMouseOver={e=>(e.currentTarget.style.background='var(--surface-3)')}
+                        onMouseOut={e=>(e.currentTarget.style.background='')}>
+                        {f.unvan}
+                      </div>
+                    ))}
+                    {firmalar.filter((f:any)=>f.unvan.toLowerCase().includes(firmaArama.toLowerCase())).length===0 && (
+                      <div style={{ padding:'10px 14px', fontSize:13, color:'var(--text-faint)' }}>Bulunamadı</div>
+                    )}
+                  </div>
+                )}
               </div>
               <div><label style={lbl}>Termin (Son Tarih)</label><input type="date" value={form.son_tarih} onChange={e => setForm({...form, son_tarih: e.target.value})}/></div>
               <div style={{ gridColumn:'1/3' }}><label style={lbl}>Ek Notlar</label><input value={form.aciklama} onChange={e => setForm({...form, aciklama: e.target.value})} placeholder="Ek notlar..."/></div>
