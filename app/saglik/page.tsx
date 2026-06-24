@@ -62,11 +62,12 @@ export default function Saglik() {
     sb2.auth.getUser().then(async ({ data }) => {
       if (data.user) {
         const { data: p } = await sb2.from('personeller').select('rol, sube').eq('id', data.user.id).single()
-        setMevcutRol(p?.rol || 'saha')
-        const ps = p?.sube || 'her_ikisi'
+        const rol = p?.rol || 'saha'
+        setMevcutRol(rol)
+        const tamErisim = ['yonetici', 'muhasebe', 'operasyon'].includes(rol)
+        const ps = tamErisim ? 'her_ikisi' : (p?.sube || 'her_ikisi')
         setKulSube(ps)
         if (ps === 'sandikli') setSube('sandikli')
-        else if (ps === 'merkez') setSube('merkez')
       }
     })
   }, [])
