@@ -64,8 +64,7 @@ export default function Saglik() {
         const { data: p } = await sb2.from('personeller').select('rol, sube').eq('id', data.user.id).single()
         const rol = p?.rol || 'saha'
         setMevcutRol(rol)
-        const tamErisim = ['yonetici', 'muhasebe', 'operasyon'].includes(rol)
-        const ps = tamErisim ? 'her_ikisi' : (p?.sube || 'her_ikisi')
+        const ps = rol === 'yonetici' ? 'her_ikisi' : (p?.sube || 'merkez')
         setKulSube(ps)
         if (ps === 'sandikli') setSube('sandikli')
       }
