@@ -45,14 +45,15 @@ export default function Koordinasyon() {
     })
   }, [])
 
-  useEffect(() => { if (mevcutPersonel !== null) yukle() }, [mevcutPersonel, durumFiltre])
+  useEffect(() => { if (mevcutPersonel !== null) yukle(mevcutPersonel) }, [mevcutPersonel, durumFiltre])
 
-  async function yukle() {
+  async function yukle(p?: any) {
+    const aktifPersonel = p ?? mevcutPersonel
     setYukleniyor(true)
-    const rol = mevcutPersonel?.rol || 'operasyon'
+    const rol = aktifPersonel?.rol || 'operasyon'
     let q = sb.from('gorevler').select('*, personeller(ad_soyad), firmalar(unvan)').order('tarih', { ascending: false })
-    if (rol !== 'yonetici' && rol !== 'operasyon' && mevcutPersonel?.id) {
-      q = q.or(`uzman_id.eq.${mevcutPersonel.id},olusturan_id.eq.${mevcutPersonel.id}`)
+    if (rol !== 'yonetici' && rol !== 'operasyon' && aktifPersonel?.id) {
+      q = q.or(`uzman_id.eq.${aktifPersonel.id},olusturan_id.eq.${aktifPersonel.id}`)
     }
     if (durumFiltre !== 'Hepsi') q = q.eq('durum', durumFiltre)
 
