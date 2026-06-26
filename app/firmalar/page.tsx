@@ -32,6 +32,10 @@ export default function Firmalar() {
   const [kulRol, setKulRol] = useState<string>('operasyon')
   const [kulAd, setKulAd] = useState<string>('')
   const [pasifModal, setPasifModal] = useState<any>(null) // { firma }
+  const [topluImportModal, setTopluImportModal] = useState(false)
+  const [topluImportSonuc, setTopluImportSonuc] = useState<any[]>([])
+  const [topluImportYukleniyor, setTopluImportYukleniyor] = useState(false)
+  const [topluImportHata, setTopluImportHata] = useState('')
   const [katipExcelModal, setKatipExcelModal] = useState(false)
   const [katipExcelSonuc, setKatipExcelSonuc] = useState<any[]>([])
   const [katipExcelAy, setKatipExcelAy] = useState('')
@@ -395,6 +399,169 @@ export default function Firmalar() {
     })), 'firmalar')
   }
 
+  // ===== TOPLU EXCEL EXPORT (tüm alanlar) =====
+  function topluExcelIndir() {
+    const veri = filtreli.map(f => ({
+      'FİRMA ÜNVANI': f.unvan || '',
+      'İSG KATİP ÜNVAN': f.isg_katip_unvan || '',
+      'SINIFI': f.tehlike_sinifi || '',
+      'SGK SİCİL NO': f.sgk_sicil || '',
+      'PLAN SAYI': f.plan_sayi ?? '',
+      'HAZİRAN SAYI': f.calisan_sayisi ?? '',
+      'FATURA': f.fatura ? 'EVET' : 'HAYIR',
+      'FATURA AÇIKLAMA': f.fatura_aciklama || '',
+      'KLASÖR': f.klasor || '',
+      'KİŞİ BAŞI': f.kisi_basi_ucret ?? '',
+      'KİŞİ BAŞI YENİ': f.kisi_basi_ucret_yeni ?? '',
+      'CARİ SÖZLEŞME': f.cari_sozlesme ? 'EVET' : 'HAYIR',
+      'İGU ATAMA': f.gorevli_igu || '',
+      'IGU ATAMA TARİHİ': f.igu_atama_tarihi || '',
+      'DR.ATAMA': f.gorevli_ih || '',
+      'DR.ATAMA TARİHİ': f.ih_atama_tarihi || '',
+      'BHL ATAMA': f.bhl_atama || '',
+      'DSP ATAMA': f.gorevli_dsp || '',
+      'ATAMA AÇIKLAMA': f.atama_aciklama || '',
+      'Dr Süre': f.dr_sure ?? '',
+      'Uzman Süre': f.uzman_sure ?? '',
+      'BÖLGE': f.bolge || '',
+      'UZMAN GİDEN': f.gorevli_igu_giden || '',
+      'UZMAN PERİYOD': f.ziyaret_periyodu || '',
+      'DR GİDEN': f.gorevli_ih_giden || '',
+      'DR PERİYOT': f.ih_periyot || '',
+      'YETKİLİ': f.yetkili || '',
+      'TELEFON': f.telefon || '',
+      'TELEFON2': f.telefon2 || '',
+      'EMAIL': f.email || '',
+      'ADRES': f.adres || '',
+      'BÖLGE2': f.faaliyet || '',
+      'AKTİF': f.aktif ? 'EVET' : 'HAYIR',
+    }))
+    const ws = XLSX.utils.json_to_sheet(veri)
+    ws['!cols'] = [
+      {wch:40},{wch:40},{wch:14},{wch:26},{wch:10},{wch:12},{wch:8},{wch:20},{wch:10},
+      {wch:10},{wch:10},{wch:10},{wch:16},{wch:14},{wch:16},{wch:14},{wch:10},{wch:10},
+      {wch:20},{wch:8},{wch:10},{wch:14},{wch:16},{wch:12},{wch:12},{wch:12},
+      {wch:16},{wch:14},{wch:14},{wch:20},{wch:30},{wch:14},{wch:8},
+    ]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Firmalar')
+    XLSX.writeFile(wb, `firmalar_${new Date().toISOString().slice(0,10)}.xlsx`)
+  }
+
+  // ===== ŞABLON İNDİR =====
+  function sablonIndir() {
+    const ornek = [{
+      'FİRMA ÜNVANI': 'ÖRNEK FİRMA A.Ş. (Bu sütun zorunlu — değiştirmeyin)',
+      'İSG KATİP ÜNVAN': '', 'SINIFI': 'Tehlikeli', 'SGK SİCİL NO': '',
+      'PLAN SAYI': 5, 'HAZİRAN SAYI': 5, 'FATURA': 'EVET', 'FATURA AÇIKLAMA': '',
+      'KLASÖR': '', 'KİŞİ BAŞI': 500, 'KİŞİ BAŞI YENİ': 650, 'CARİ SÖZLEŞME': 'HAYIR',
+      'İGU ATAMA': 'ALİ İHSAN', 'IGU ATAMA TARİHİ': '', 'DR.ATAMA': 'SAMİ', 'DR.ATAMA TARİHİ': '',
+      'BHL ATAMA': 'YOK', 'DSP ATAMA': '', 'ATAMA AÇIKLAMA': '',
+      'Dr Süre': 50, 'Uzman Süre': 100, 'BÖLGE': 'MERKEZ',
+      'UZMAN GİDEN': 'ALİ İHSAN', 'UZMAN PERİYOD': '1,00',
+      'DR GİDEN': 'AYŞE', 'DR PERİYOT': '1,00',
+      'YETKİLİ': '', 'TELEFON': '', 'TELEFON2': '', 'EMAIL': '', 'ADRES': '', 'BÖLGE2': '', 'AKTİF': 'EVET',
+    }]
+    const ws = XLSX.utils.json_to_sheet(ornek)
+    ws['!cols'] = [
+      {wch:40},{wch:40},{wch:14},{wch:26},{wch:10},{wch:12},{wch:8},{wch:20},{wch:10},
+      {wch:10},{wch:10},{wch:10},{wch:16},{wch:14},{wch:16},{wch:14},{wch:10},{wch:10},
+      {wch:20},{wch:8},{wch:10},{wch:14},{wch:16},{wch:12},{wch:12},{wch:12},
+      {wch:16},{wch:14},{wch:14},{wch:20},{wch:30},{wch:14},{wch:8},
+    ]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Firmalar')
+    XLSX.writeFile(wb, 'firmalar_sablon.xlsx')
+  }
+
+  // ===== TOPLU EXCEL İÇE AKTAR =====
+  async function topluImportOku(e: any) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setTopluImportYukleniyor(true)
+    setTopluImportHata('')
+    setTopluImportSonuc([])
+    const buf = await file.arrayBuffer()
+    const wb = XLSX.read(buf, { type: 'array' })
+    const ws = wb.Sheets[wb.SheetNames[0]]
+    const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' })
+
+    const sonuclar: any[] = []
+    for (const row of rows) {
+      const unvan = (row['FİRMA ÜNVANI'] || '').toString().trim()
+      if (!unvan || unvan.startsWith('Bu sütun')) continue
+      // DB'de bul
+      const eslesen = firmalar.find(f =>
+        f.unvan?.toLowerCase().trim() === unvan.toLowerCase()
+      )
+      sonuclar.push({
+        unvan,
+        db_id: eslesen?.id || null,
+        eslesti: !!eslesen,
+        row,
+      })
+    }
+    setTopluImportSonuc(sonuclar)
+    setTopluImportYukleniyor(false)
+  }
+
+  async function topluImportKaydet() {
+    const sb2 = createClient()
+    const eslesenler = topluImportSonuc.filter(r => r.eslesti)
+    let basari = 0, hata = 0
+    for (const r of eslesenler) {
+      const row = r.row
+      const payload: any = {}
+      const str = (k: string) => { const v = row[k]?.toString().trim(); return v || null }
+      const num = (k: string) => { const v = parseFloat(row[k]?.toString().replace(',','.')); return isNaN(v) ? null : v }
+      const bool = (k: string) => row[k]?.toString().toUpperCase() === 'EVET'
+      const tarih = (k: string) => {
+        const v = str(k); if (!v) return null
+        const m = v.match(/(\d{1,2})[./](\d{1,2})[./](\d{4})/)
+        return m ? `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}` : null
+      }
+      if (str('İSG KATİP ÜNVAN')) payload.isg_katip_unvan = str('İSG KATİP ÜNVAN')
+      if (str('SINIFI')) payload.tehlike_sinifi = str('SINIFI')
+      if (str('SGK SİCİL NO')) payload.sgk_sicil = str('SGK SİCİL NO')
+      if (row['PLAN SAYI'] !== '') payload.plan_sayi = num('PLAN SAYI')
+      if (row['HAZİRAN SAYI'] !== '') payload.calisan_sayisi = num('HAZİRAN SAYI')
+      if (row['FATURA'] !== '') payload.fatura = bool('FATURA')
+      if (str('FATURA AÇIKLAMA')) payload.fatura_aciklama = str('FATURA AÇIKLAMA')
+      if (str('KLASÖR')) payload.klasor = str('KLASÖR')
+      if (row['KİŞİ BAŞI'] !== '') payload.kisi_basi_ucret = num('KİŞİ BAŞI')
+      if (row['KİŞİ BAŞI YENİ'] !== '') payload.kisi_basi_ucret_yeni = num('KİŞİ BAŞI YENİ')
+      if (row['CARİ SÖZLEŞME'] !== '') payload.cari_sozlesme = bool('CARİ SÖZLEŞME')
+      if (str('İGU ATAMA')) payload.gorevli_igu = str('İGU ATAMA')
+      if (tarih('IGU ATAMA TARİHİ')) payload.igu_atama_tarihi = tarih('IGU ATAMA TARİHİ')
+      if (str('DR.ATAMA')) payload.gorevli_ih = str('DR.ATAMA')
+      if (tarih('DR.ATAMA TARİHİ')) payload.ih_atama_tarihi = tarih('DR.ATAMA TARİHİ')
+      if (str('BHL ATAMA')) payload.bhl_atama = str('BHL ATAMA')
+      if (str('DSP ATAMA')) payload.gorevli_dsp = str('DSP ATAMA')
+      if (str('ATAMA AÇIKLAMA')) payload.atama_aciklama = str('ATAMA AÇIKLAMA')
+      if (row['Dr Süre'] !== '') payload.dr_sure = num('Dr Süre')
+      if (row['Uzman Süre'] !== '') payload.uzman_sure = num('Uzman Süre')
+      if (str('BÖLGE')) payload.bolge = str('BÖLGE')
+      if (str('UZMAN GİDEN')) payload.gorevli_igu_giden = str('UZMAN GİDEN')
+      if (str('UZMAN PERİYOD')) payload.ziyaret_periyodu = str('UZMAN PERİYOD')
+      if (str('DR GİDEN')) payload.gorevli_ih_giden = str('DR GİDEN')
+      if (str('DR PERİYOT')) payload.ih_periyot = str('DR PERİYOT')
+      if (str('YETKİLİ')) payload.yetkili = str('YETKİLİ')
+      if (str('TELEFON')) payload.telefon = str('TELEFON')
+      if (str('TELEFON2')) payload.telefon2 = str('TELEFON2')
+      if (str('EMAIL')) payload.email = str('EMAIL')
+      if (str('ADRES')) payload.adres = str('ADRES')
+      if (row['AKTİF'] !== '') payload.aktif = bool('AKTİF')
+
+      const { error } = await sb2.from('firmalar').update(payload).eq('id', r.db_id)
+      if (error) hata++; else basari++
+    }
+    alert(`✅ ${basari} firma güncellendi${hata > 0 ? `, ⚠️ ${hata} hata` : ''}`)
+    setTopluImportModal(false)
+    setTopluImportSonuc([])
+    yukle()
+  }
+
+
   const filtreli = firmalar // Filtreleme server-side yapılıyor
 
   const tl = (n:number) => n > 0 ? new Intl.NumberFormat('tr-TR').format(n) + ' ₺' : '—'
@@ -429,6 +596,19 @@ export default function Firmalar() {
             <button onClick={faturaExcelIndir} style={{ padding:'8px 14px', borderRadius:8, border:'1px solid var(--green)', background:'rgba(34,197,94,0.08)', cursor:'pointer', color:'var(--green)', fontSize:13, display:'flex', alignItems:'center', gap:6, fontFamily:'inherit', fontWeight:600 }}>
               <Download size={14}/> Fatura Excel
             </button>
+          )}
+          {izin.duzenle && (
+            <>
+              <button onClick={topluExcelIndir} style={{ padding:'8px 14px', borderRadius:8, border:'1px solid var(--blue)', background:'rgba(99,102,241,0.08)', cursor:'pointer', color:'var(--blue)', fontSize:13, display:'flex', alignItems:'center', gap:6, fontFamily:'inherit', fontWeight:600 }}>
+                <Download size={14}/> Toplu İndir
+              </button>
+              <button onClick={sablonIndir} style={{ padding:'8px 14px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', cursor:'pointer', color:'var(--text-dim)', fontSize:13, display:'flex', alignItems:'center', gap:6, fontFamily:'inherit' }}>
+                <Download size={14}/> Şablon
+              </button>
+              <button onClick={()=>{ setTopluImportModal(true); setTopluImportSonuc([]) }} style={{ padding:'8px 14px', borderRadius:8, border:'1px solid var(--amber)', background:'rgba(251,191,36,0.08)', cursor:'pointer', color:'var(--amber)', fontSize:13, display:'flex', alignItems:'center', gap:6, fontFamily:'inherit', fontWeight:600 }}>
+                <Upload size={14}/> Toplu Aktar
+              </button>
+            </>
           )}
           <button onClick={()=>{ setKatipExcelModal(true); setKatipExcelSonuc([]); setKatipExcelAy(new Date().getFullYear()+'-'+(new Date().getMonth()+1).toString().padStart(2,'0')) }} style={{ padding:'8px 14px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', cursor:'pointer', color:'var(--text-dim)', fontSize:13, display:'flex', alignItems:'center', gap:6, fontFamily:'inherit' }}>
             <Upload size={14}/> Katip Excel
@@ -1282,6 +1462,74 @@ export default function Firmalar() {
           </div>
         </div>
       )}
+      {/* Toplu Excel İçe Aktarma Modalı */}
+      {topluImportModal && (
+        <div className="modal-overlay" onClick={()=>setTopluImportModal(false)}>
+          <div className="modal-content" style={{ maxWidth:700 }} onClick={e=>e.stopPropagation()}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+              <h3 style={{ fontWeight:700, fontSize:16 }}>📥 Toplu Firma Güncelleme</h3>
+              <button onClick={()=>setTopluImportModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-dim)' }}><X size={20}/></button>
+            </div>
+
+            <div style={{ background:'rgba(99,102,241,0.08)', border:'1px solid rgba(99,102,241,0.3)', borderRadius:8, padding:'12px 16px', fontSize:12, color:'var(--text-dim)', marginBottom:16 }}>
+              💡 <strong>Nasıl çalışır?</strong> Önce <strong>Toplu İndir</strong> veya <strong>Şablon</strong> butonuyla Excel indir → düzenle → burada yükle. <br/>
+              <strong>FİRMA ÜNVANI</strong> sütunu eşleştirme için kullanılır — değiştirme. Boş bırakılan hücreler güncellenmez.
+            </div>
+
+            {topluImportSonuc.length === 0 ? (
+              <div style={{ textAlign:'center', padding:'20px 0' }}>
+                <input type="file" accept=".xlsx,.xls" id="toplu-import-input" style={{ display:'none' }}
+                  onChange={topluImportOku} />
+                <label htmlFor="toplu-import-input" style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'12px 24px', borderRadius:10, background:'var(--accent)', color:'white', cursor:'pointer', fontWeight:600, fontSize:14, fontFamily:'inherit' }}>
+                  <Upload size={16}/> {topluImportYukleniyor ? 'Okunuyor...' : 'Excel Dosyası Seç'}
+                </label>
+                {topluImportHata && <p style={{ color:'var(--red)', marginTop:10, fontSize:13 }}>{topluImportHata}</p>}
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom:12, fontSize:13 }}>
+                  <span style={{ color:'var(--green)', fontWeight:600 }}>✅ {topluImportSonuc.filter(r=>r.eslesti).length} firma eşleşti</span>
+                  {topluImportSonuc.filter(r=>!r.eslesti).length > 0 && (
+                    <span style={{ color:'var(--red)', fontWeight:600, marginLeft:16 }}>
+                      ⚠️ {topluImportSonuc.filter(r=>!r.eslesti).length} firma DB'de bulunamadı
+                    </span>
+                  )}
+                </div>
+                <div style={{ maxHeight:300, overflowY:'auto', border:'1px solid var(--border)', borderRadius:8, marginBottom:16 }}>
+                  <table style={{ width:'100%', fontSize:12, borderCollapse:'collapse' }}>
+                    <thead style={{ background:'var(--surface-2)', position:'sticky', top:0 }}>
+                      <tr>
+                        <th style={{ textAlign:'left', padding:'8px 12px' }}>Firma Ünvanı</th>
+                        <th style={{ textAlign:'center', padding:'8px 12px', width:100 }}>Durum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topluImportSonuc.map((r,i) => (
+                        <tr key={i} style={{ borderTop:'1px solid var(--border)' }}>
+                          <td style={{ padding:'8px 12px' }}>{r.unvan}</td>
+                          <td style={{ textAlign:'center', padding:'8px 12px' }}>
+                            {r.eslesti
+                              ? <span style={{ color:'var(--green)', fontWeight:600 }}>✅ Eşleşti</span>
+                              : <span style={{ color:'var(--red)', fontWeight:600 }}>❌ Bulunamadı</span>
+                            }
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{ display:'flex', gap:10 }}>
+                  <button onClick={()=>{ setTopluImportSonuc([]); setTopluImportModal(false) }} className="btn-ghost btn" style={{ flex:1, justifyContent:'center' }}>İptal</button>
+                  <button onClick={topluImportKaydet} disabled={!topluImportSonuc.some(r=>r.eslesti)} style={{ flex:2, padding:'10px', borderRadius:8, background:'var(--accent)', border:'none', color:'white', cursor:'pointer', fontWeight:700, fontSize:13, fontFamily:'inherit', opacity: topluImportSonuc.some(r=>r.eslesti) ? 1 : 0.4 }}>
+                    ✅ {topluImportSonuc.filter(r=>r.eslesti).length} Firmayı Güncelle
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Katip Excel Yükleme Modalı */}
       {katipExcelModal && (
         <div className="modal-overlay" onClick={()=>setKatipExcelModal(false)}>
