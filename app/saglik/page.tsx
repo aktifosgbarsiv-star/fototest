@@ -12,6 +12,15 @@ const ODEME = ['Nakit','Vakıf POS','Cebim POS','İBAN','Cari']
 const ODEME_RENK: any = { Nakit:'var(--green)', 'Vakıf POS':'var(--blue)', 'Cebim POS':'var(--accent)', İBAN:'var(--amber)', Cari:'var(--red)' }
 const SAYFA_BOYUTU = 50
 
+// Kasa toplamı için hangi ödeme türleri nakit sayılır
+const KASA_GRUPLARI: Record<string, string[]> = {
+  'Nakit':      ['Nakit'],
+  'Vakıf POS':  ['Vakıf POS'],
+  'Cebim POS':  ['Cebim POS'],
+  'İBAN':       ['İBAN'],
+  'Cari':       ['Cari'],
+}
+
 export default function Saglik() {
   const izin = useIzin('saglik')
   const [kayitlar, setKayitlar] = useState<any[]>([])
@@ -25,7 +34,7 @@ export default function Saglik() {
   const [basTarih, setBasTarih] = useState('')
   const [bitTarih, setBitTarih] = useState('')
   const [modal, setModal] = useState(false)
-  const [duzenle, setDuzenle] = useState<any>(null) // düzenleme modu - kayıt objesi
+  const [duzenle, setDuzenle] = useState<any>(null)
   const [detay, setDetay] = useState<any>(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [nextPrNo, setNextPrNo] = useState<number|null>(null)
@@ -35,6 +44,8 @@ export default function Saglik() {
   const [kulSube, setKulSube] = useState<string>('her_ikisi')
   const [sayfa, setSayfa] = useState(0)
   const [toplamKayit, setToplamKayit] = useState(0)
+  // Kasa toplamları (filtre uygulanmış tüm kayıtlar için)
+  const [kasaToplam, setKasaToplam] = useState<Record<string, number>>({})
   const debounceRef = useRef<any>(null)
 
   function bosForm() {
@@ -43,7 +54,6 @@ export default function Saglik() {
 
   const sb = createClient()
 
-  // Debounce arama
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
@@ -53,10 +63,8 @@ export default function Saglik() {
     return () => clearTimeout(debounceRef.current)
   }, [arama])
 
-  // Filtre değişince sayfayı sıfırla
   useEffect(() => { setSayfa(0) }, [hekimFiltre, odemeFiltre, basTarih, bitTarih, sube])
 
-  // Sayfayı yükle
   useEffect(() => {
     const sb2 = createClient()
     sb2.auth.getUser().then(async ({ data }) => {
@@ -73,7 +81,6 @@ export default function Saglik() {
 
   useEffect(() => { yukle() }, [aramaDebounced, hekimFiltre, odemeFiltre, basTarih, bitTarih, sayfa, sube])
 
-  // İlk yüklemede firmalar ve personeller
   useEffect(() => {
     const sb2 = createClient()
     Promise.all([
@@ -90,25 +97,43 @@ export default function Saglik() {
     const from = sayfa * SAYFA_BOYUTU
     const to = from + SAYFA_BOYUTU - 1
 
+    // Sayfalı sorgu (tablo için)
     let q = sb.from('hasta_kayitlari')
       .select('id, tarih, ad_soyad, cinsiyet, telefon, firma, ucret, odeme_sekli, tetkikler, hekim_id, gaita, tit, hbsag, antihbs, hcv, hiv, kan_grubu, goz, isg_egitim, aciklama, pr_no', { count: 'exact' })
       .eq('sube', sube)
       .order('pr_no', { ascending: false })
       .range(from, to)
 
-    // Server-side filtreler
-    if (aramaDebounced) {
-      q = q.or(`ad_soyad.ilike.%${aramaDebounced}%,firma.ilike.%${aramaDebounced}%`)
-    }
+    if (aramaDebounced) q = q.or(`ad_soyad.ilike.%${aramaDebounced}%,firma.ilike.%${aramaDebounced}%`)
     if (hekimFiltre !== 'Hepsi') q = q.eq('hekim_id', hekimFiltre)
     if (odemeFiltre !== 'Hepsi') q = q.eq('odeme_sekli', odemeFiltre)
     if (basTarih) q = q.gte('tarih', basTarih)
     if (bitTarih) q = q.lte('tarih', bitTarih)
 
-    const { data, error, count } = await q
+    // Kasa toplamı için ayrı sorgu (tüm kayıtlar, sayfalama yok)
+    let qKasa = sb.from('hasta_kayitlari')
+      .select('ucret, odeme_sekli')
+      .eq('sube', sube)
+    if (aramaDebounced) qKasa = qKasa.or(`ad_soyad.ilike.%${aramaDebounced}%,firma.ilike.%${aramaDebounced}%`)
+    if (hekimFiltre !== 'Hepsi') qKasa = qKasa.eq('hekim_id', hekimFiltre)
+    if (odemeFiltre !== 'Hepsi') qKasa = qKasa.eq('odeme_sekli', odemeFiltre)
+    if (basTarih) qKasa = qKasa.gte('tarih', basTarih)
+    if (bitTarih) qKasa = qKasa.lte('tarih', bitTarih)
+
+    const [{ data, error, count }, { data: kasaData }] = await Promise.all([q, qKasa])
+
     if (error) { setHata('Yüklenemedi'); setYukleniyor(false); return }
     setKayitlar(data || [])
     setToplamKayit(count || 0)
+
+    // Ödeme türüne göre topla
+    const toplam: Record<string, number> = {}
+    for (const k of (kasaData || [])) {
+      const t = k.odeme_sekli || 'Nakit'
+      toplam[t] = (toplam[t] || 0) + (Number(k.ucret) || 0)
+    }
+    setKasaToplam(toplam)
+
     setYukleniyor(false)
   }, [aramaDebounced, hekimFiltre, odemeFiltre, basTarih, bitTarih, sayfa, sube])
 
@@ -174,7 +199,6 @@ export default function Saglik() {
   }
 
   async function exportCSV() {
-    // CSV için tüm filtrelenmiş veriyi çek (limit yok)
     let q = sb.from('hasta_kayitlari')
       .select('tarih, ad_soyad, cinsiyet, telefon, firma, ucret, odeme_sekli, tetkikler, gaita, tit, hbsag, antihbs, hcv, hiv, kan_grubu, goz, isg_egitim, aciklama, pr_no')
       .eq('sube', sube)
@@ -190,16 +214,6 @@ export default function Saglik() {
       'Telefon': k.telefon || '', 'Firma': k.firma || '',
       'Ücret': k.ucret || 0, 'Ödeme': k.odeme_sekli || '',
       'Tetkikler': Object.entries(k.tetkikler || {}).filter(([, v]) => v).map(([t]) => t.toUpperCase()).join(', '),
-      'EK2': k.tetkikler?.ek2 ? 'Evet' : '', 'AKC': k.tetkikler?.akc ? 'Evet' : '',
-      'ODİO': k.tetkikler?.odio ? 'Evet' : '', 'SFT': k.tetkikler?.sft ? 'Evet' : '',
-      'EKG': k.tetkikler?.ekg ? 'Evet' : '', 'CBC': k.tetkikler?.cbc ? 'Evet' : '',
-      'AST': k.tetkikler?.ast ? 'Evet' : '', 'ALT': k.tetkikler?.alt ? 'Evet' : '',
-      'Üre': k.tetkikler?.ure ? 'Evet' : '', 'Kreatinin': k.tetkikler?.kreatinin ? 'Evet' : '',
-      'Glukoz': k.tetkikler?.glukoz ? 'Evet' : '', 'Burun': k.tetkikler?.burun ? 'Evet' : '',
-      'Boğaz': k.tetkikler?.bogaz ? 'Evet' : '',
-      'Gaita': k.gaita ? 'Evet' : '', 'TİT': k.tit ? 'Evet' : '',
-      'HBsAg': k.hbsag ? 'Evet' : '', 'Anti-HBs': k.antihbs ? 'Evet' : '',
-      'Göz': k.goz ? 'Evet' : '', 'İSG Eğitim': k.isg_egitim ? 'Evet' : '',
       'PR No': k.pr_no || '', 'Açıklama': k.aciklama || '',
     })), 'saglik_tarama')
   }
@@ -220,27 +234,12 @@ export default function Saglik() {
       'Telefon': k.telefon || '', 'Firma': k.firma || '',
       'Ücret': Number(k.ucret) || 0, 'Ödeme': k.odeme_sekli || '',
       'Tetkikler': Object.entries(k.tetkikler || {}).filter(([, v]) => v).map(([t]) => t.toUpperCase()).join(', '),
-      'EK2': k.tetkikler?.ek2 ? 'Evet' : '', 'AKC': k.tetkikler?.akc ? 'Evet' : '',
-      'ODİO': k.tetkikler?.odio ? 'Evet' : '', 'SFT': k.tetkikler?.sft ? 'Evet' : '',
-      'EKG': k.tetkikler?.ekg ? 'Evet' : '', 'CBC': k.tetkikler?.cbc ? 'Evet' : '',
-      'AST': k.tetkikler?.ast ? 'Evet' : '', 'ALT': k.tetkikler?.alt ? 'Evet' : '',
-      'Üre': k.tetkikler?.ure ? 'Evet' : '', 'Kreatinin': k.tetkikler?.kreatinin ? 'Evet' : '',
-      'Glukoz': k.tetkikler?.glukoz ? 'Evet' : '', 'Burun': k.tetkikler?.burun ? 'Evet' : '',
-      'Boğaz': k.tetkikler?.bogaz ? 'Evet' : '',
-      'Gaita': k.gaita ? 'Evet' : '', 'TİT': k.tit ? 'Evet' : '',
-      'HBsAg': k.hbsag ? 'Evet' : '', 'Anti-HBs': k.antihbs ? 'Evet' : '',
-      'Göz': k.goz ? 'Evet' : '', 'İSG Eğitim': k.isg_egitim ? 'Evet' : '',
       'PR No': k.pr_no || '', 'Açıklama': k.aciklama || '',
     }))
     const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Sağlık Raporu')
-    // Kolon genişlikleri
-    ws['!cols'] = [
-      {wch:12},{wch:22},{wch:14},{wch:14},{wch:28},
-      {wch:10},{wch:10},{wch:30},{wch:6},{wch:6},
-      {wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},
-    ]
+    ws['!cols'] = [{wch:12},{wch:22},{wch:14},{wch:14},{wch:28},{wch:10},{wch:10},{wch:30},{wch:8},{wch:12}]
     XLSX.writeFile(wb, `saglik_raporu_${new Date().toISOString().slice(0,10)}.xlsx`)
   }
 
@@ -248,6 +247,10 @@ export default function Saglik() {
   const paraMi = ['yonetici', 'muhasebe', 'satis'].includes(mevcutRol)
   const tl = (n: number) => new Intl.NumberFormat('tr-TR').format(n) + ' ₺'
   const toplamSayfa = Math.ceil(toplamKayit / SAYFA_BOYUTU)
+
+  // Kasa toplamı hesapla
+  const kasaGenelToplam = Object.values(kasaToplam).reduce((s, v) => s + v, 0)
+  const kasaVarMi = kasaGenelToplam > 0
 
   return (
     <div className="page-wrap">
@@ -281,14 +284,10 @@ export default function Saglik() {
         })}
       </div>
 
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'var(--green-soft)', border: '1px solid rgba(99,102,241,0.1)', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
-        <span style={{ fontSize: 18, flexShrink: 0 }}>💡</span>
-        <p style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.7, margin: 0 }}>Sağlık Raporu — İşe giriş ve periyodik muayene kayıtları. Arama kutusuna yazınca sunucu tarafında filtreleme yapılır. Sayfalama ile hızlı gezin.</p>
-      </div>
-
       {hata && <div style={{ background: 'var(--red-soft)', color: 'var(--red)', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 16 }}>{hata}</div>}
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 20 }}>
+      {/* FİLTRELER */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ position: 'relative' }}>
           <Search size={15} style={{ position: 'absolute', left: 10, top: 11, color: 'var(--text-faint)' }} />
           <input value={arama} onChange={e => setArama(e.target.value)} placeholder="Hasta veya firma ara..." style={{ paddingLeft: 34, width: 200 }} />
@@ -299,14 +298,54 @@ export default function Saglik() {
           <option value="Hepsi">Tüm Hekimler</option>
           {hekimler.map((h: any) => <option key={h.id} value={h.id}>{h.ad_soyad}</option>)}
         </select>
-        <select value={odemeFiltre} onChange={e => setOdemeFiltre(e.target.value)} style={{ padding: '8px 12px', width: 120, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }}>
-          {['Hepsi', 'Peşin', 'Cari', 'İBAN', 'POS'].map(o => <option key={o}>{o}</option>)}
+        {/* Ödeme filtresi — DB'deki gerçek değerler */}
+        <select value={odemeFiltre} onChange={e => setOdemeFiltre(e.target.value)} style={{ padding: '8px 12px', width: 130, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 13, fontFamily: 'inherit' }}>
+          <option value="Hepsi">Tüm Ödeme</option>
+          {ODEME.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
+        {/* Bugün kısayolu */}
+        <button onClick={() => { const t = new Date().toISOString().slice(0,10); setBasTarih(t); setBitTarih(t); setSayfa(0) }}
+          style={{ padding: '8px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+          📅 Bugün
+        </button>
+        <button onClick={() => { setBasTarih(''); setBitTarih(''); setOdemeFiltre('Hepsi'); setHekimFiltre('Hepsi'); setArama('') }}
+          style={{ padding: '8px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text-faint)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+          ✕ Temizle
+        </button>
         <button onClick={exportCSV} style={{ padding: '10px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text-dim)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>↓ CSV</button>
         <button onClick={exportExcel} style={{ padding: '10px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, color: '#22c55e', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', display:'flex', alignItems:'center', gap:6 }}>
           <span style={{ fontSize:15 }}>⊞</span> Excel
         </button>
       </div>
+
+      {/* KASA TOPLAM KARTI — sadece para görebilen roller için */}
+      {paraMi && kasaVarMi && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px', marginBottom: 20, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8 }}>
+            <span style={{ fontSize: 18 }}>🧾</span>
+            <span style={{ fontFamily: 'Sora,sans-serif', fontWeight: 700, fontSize: 14 }}>Kasa Özeti</span>
+            <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>
+              {basTarih || bitTarih ? `${basTarih || '...'} – ${bitTarih || '...'}` : 'Tüm dönem'}
+              {odemeFiltre !== 'Hepsi' ? ` · ${odemeFiltre}` : ''}
+            </span>
+          </div>
+          {ODEME.map(o => {
+            const t = kasaToplam[o] || 0
+            if (t === 0 && odemeFiltre !== 'Hepsi' && odemeFiltre !== o) return null
+            if (t === 0) return null
+            return (
+              <div key={o} style={{ display: 'flex', alignItems: 'center', gap: 8, background: `${ODEME_RENK[o]}18`, border: `1px solid ${ODEME_RENK[o]}40`, borderRadius: 8, padding: '6px 14px' }}>
+                <span style={{ fontSize: 12, color: ODEME_RENK[o], fontWeight: 600 }}>{o}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{tl(t)}</span>
+              </div>
+            )
+          })}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 16px' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-dim)', fontWeight: 600 }}>TOPLAM</span>
+            <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{tl(kasaGenelToplam)}</span>
+          </div>
+        </div>
+      )}
 
       <div className="card" style={{ overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
@@ -346,7 +385,6 @@ export default function Saglik() {
           </table>
         </div>
 
-        {/* Sayfalama */}
         {toplamSayfa > 1 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
             <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>
@@ -404,7 +442,7 @@ export default function Saglik() {
         </div>
       )}
 
-      {/* Yeni Kayıt Modal */}
+      {/* Yeni Kayıt / Düzenle Modal */}
       {(modal || duzenle) && (
         <div className="modal-overlay" onClick={() => { setModal(false); setDuzenle(null) }}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
