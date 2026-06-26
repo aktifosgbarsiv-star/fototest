@@ -461,6 +461,9 @@ export default function Firmalar() {
       'UZMAN GİDEN': 'ALİ İHSAN', 'UZMAN PERİYOD': '1,00',
       'DR GİDEN': 'AYŞE', 'DR PERİYOT': '1,00',
       'YETKİLİ': '', 'TELEFON': '', 'TELEFON2': '', 'EMAIL': '', 'ADRES': '', 'BÖLGE2': '', 'AKTİF': 'EVET',
+      'OCAK': '', 'ŞUBAT': '', 'MART': '', 'NİSAN': '', 'MAYIS': '', 'HAZİRAN': '',
+      'TEMMUZ': '', 'AĞUSTOS': '', 'EYLÜL': '', 'EKİM': '', 'KASIM': '', 'ARALIK': '',
+      'FARK': '', 'AYLIK TUTAR': '',
     }]
     const ws = XLSX.utils.json_to_sheet(ornek)
     ws['!cols'] = [
@@ -468,6 +471,9 @@ export default function Firmalar() {
       {wch:10},{wch:10},{wch:10},{wch:16},{wch:14},{wch:16},{wch:14},{wch:10},{wch:10},
       {wch:20},{wch:8},{wch:10},{wch:14},{wch:16},{wch:12},{wch:12},{wch:12},
       {wch:16},{wch:14},{wch:14},{wch:20},{wch:30},{wch:14},{wch:8},
+      {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},
+      {wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},
+      {wch:8},{wch:12},
     ]
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Firmalar')
@@ -562,6 +568,17 @@ export default function Firmalar() {
         if (str('ADRES') !== null) p.adres = str('ADRES')
         if (row['AKTİF'] !== '') p.aktif = bool('AKTİF')
         else if (forInsert) p.aktif = true
+        // Aylık kişi sayıları
+        const AY_KOLON_MAP: Record<string, string> = {
+          'OCAK': 'ocak_kisi', 'ŞUBAT': 'subat_kisi', 'MART': 'mart_kisi',
+          'NİSAN': 'nisan_kisi', 'MAYIS': 'mayis_kisi', 'HAZİRAN': 'haziran_kisi',
+          'TEMMUZ': 'temmuz_kisi', 'AĞUSTOS': 'agustos_kisi', 'EYLÜL': 'eylul_kisi',
+          'EKİM': 'ekim_kisi', 'KASIM': 'kasim_kisi', 'ARALIK': 'aralik_kisi',
+        }
+        Object.entries(AY_KOLON_MAP).forEach(([excelKol, dbKol]) => {
+          if (row[excelKol] !== '') { const v = num(excelKol); if (v !== null) p[dbKol] = v }
+        })
+        if (row['FARK'] !== '') { const v = num('FARK'); if (v !== null) p.aylik_fark = v }
         return p
       }
 
@@ -1655,3 +1672,4 @@ const mBox: any = { width:'100%', maxWidth:600, maxHeight:'90vh', overflowY:'aut
 const mHead: any = { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }
 const mTitle: any = { fontFamily:'Sora,sans-serif', fontSize:20, fontWeight:600, display:'flex', alignItems:'center', gap:10 }
 const xBtn: any = { background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer' }
+
