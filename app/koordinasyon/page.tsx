@@ -303,6 +303,7 @@ export default function Koordinasyon() {
                     <th style={{ textAlign:'left', padding:'10px 12px', minWidth:180 }}>KARAR / AÇIKLAMA</th>
                     <th style={{ textAlign:'center', padding:'10px 12px', width:110 }}>DURUM</th>
                     <th style={{ textAlign:'left', padding:'10px 12px', minWidth:130 }}>YETKİLİ</th>
+                    <th style={{ textAlign:'left', padding:'10px 12px', minWidth:120 }}>VERİLEN</th>
                     <th style={{ textAlign:'center', padding:'10px 12px', width:95 }}>G.BAŞ TRH</th>
                     <th style={{ textAlign:'center', padding:'10px 12px', width:95 }}>TERMİN</th>
                     <th style={{ width:100 }}></th>
@@ -310,7 +311,7 @@ export default function Koordinasyon() {
                 </thead>
                 <tbody>
                   {filtreliGorevler.length === 0
-                    ? <tr><td colSpan={8} style={{ textAlign:'center', padding:40, color:'var(--text-faint)' }}>
+                    ? <tr><td colSpan={9} style={{ textAlign:'center', padding:40, color:'var(--text-faint)' }}>
                         {arsivGoster ? '📦 Arşivde görev yok' : 'Görev bulunamadı'}
                       </td></tr>
                     : filtreliGorevler.map((g, i) => (
@@ -335,6 +336,9 @@ export default function Koordinasyon() {
                         </td>
                         <td style={{ padding:'10px 12px' }}>
                           <div style={{ fontWeight:500 }}>{g.yetkili_sorumlu || g.uzman || '—'}</div>
+                        </td>
+                        <td style={{ padding:'10px 12px', color:'var(--text-dim)', fontSize:11 }}>
+                          {personeller.find(p => p.id === g.olusturan_id)?.ad_soyad || '—'}
                         </td>
                         <td style={{ textAlign:'center', padding:'10px 8px', color:'var(--text-faint)', fontSize:11, whiteSpace:'nowrap' }}>
                           {g.tarih ? new Date(g.tarih + 'T00:00:00').toLocaleDateString('tr-TR') : '—'}
@@ -631,3 +635,4 @@ export default function Koordinasyon() {
 }
 
 const lbl: any = { display:'block', fontSize:12, color:'var(--text-dim)', marginBottom:6, fontWeight:500 }
+
