@@ -303,7 +303,7 @@ export default function Koordinasyon() {
                     <th style={{ textAlign:'left', padding:'10px 12px', minWidth:180 }}>KARAR / AÇIKLAMA</th>
                     <th style={{ textAlign:'center', padding:'10px 12px', width:110 }}>DURUM</th>
                     <th style={{ textAlign:'left', padding:'10px 12px', minWidth:130 }}>YETKİLİ</th>
-                    <th style={{ textAlign:'left', padding:'10px 12px', minWidth:120 }}>VERİLEN</th>
+                    <th style={{ textAlign:'left', padding:'10px 12px', minWidth:120 }}>GÖREV VEREN</th>
                     <th style={{ textAlign:'center', padding:'10px 12px', width:95 }}>G.BAŞ TRH</th>
                     <th style={{ textAlign:'center', padding:'10px 12px', width:95 }}>TERMİN</th>
                     <th style={{ width:100 }}></th>
