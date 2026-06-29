@@ -132,7 +132,6 @@ export default function Firmalar() {
     const aktifAd = ad ?? kulAd
     setYukleniyor(true)
     let q = sb.from('firmalar').select('*').order('unvan')
-    if (arama) q = q.ilike('unvan', `%${arama}%`)
     if (tehlikeFiltre !== 'Hepsi') q = q.eq('tehlike_sinifi', tehlikeFiltre)
     if (bolgeFiltre !== 'Hepsi') q = q.eq('bolge', bolgeFiltre)
     if (aktifFiltre === 'aktif') q = q.eq('aktif', true)
@@ -604,7 +603,14 @@ export default function Firmalar() {
   }
 
 
-  const filtreli = firmalar // Filtreleme server-side yapılıyor
+  const trNorm = (s: string) => s.toLocaleLowerCase('tr-TR')
+  const filtreli = arama
+    ? firmalar.filter(f =>
+        trNorm(f.unvan || '').includes(trNorm(arama)) ||
+        trNorm(f.bolge || '').includes(trNorm(arama)) ||
+        trNorm(f.faaliyet || '').includes(trNorm(arama))
+      )
+    : firmalar
 
   const tl = (n:number) => n > 0 ? new Intl.NumberFormat('tr-TR').format(n) + ' ₺' : '—'
 
@@ -1672,4 +1678,5 @@ const mBox: any = { width:'100%', maxWidth:600, maxHeight:'90vh', overflowY:'aut
 const mHead: any = { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }
 const mTitle: any = { fontFamily:'Sora,sans-serif', fontSize:20, fontWeight:600, display:'flex', alignItems:'center', gap:10 }
 const xBtn: any = { background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer' }
+
 
