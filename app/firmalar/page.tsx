@@ -718,7 +718,7 @@ export default function Firmalar() {
                 <tr>
                   <th style={{ position:'sticky', left:0, top:0, background:'var(--surface-2)', zIndex:5, minWidth:220, textAlign:'left' }}>İSG Katip Ünvan</th>
                   <th>Sınıfı</th>
-                  {AY_ADLARI.slice(0,6).map((ad,i) => {
+                  {AY_ADLARI.slice(0,7).map((ad,i) => {
                     const ciro = ayToplamCiro(i)
                     return <th key={i} style={{ color:'var(--accent)', fontSize:11, textAlign:'center', minWidth:70 }}>
                       <div>{ad}</div>
@@ -736,7 +736,7 @@ export default function Firmalar() {
               ) : (
                 <tr>
                   <th style={{ position:'sticky', left:0, top:0, background:'var(--surface-2)', zIndex:5, minWidth:220, textAlign:'left' }}>Ünvan</th><th>Bölge</th><th>Tehlike</th><th>İGU</th><th>İH</th><th>Kişi Başı</th><th>Periyot</th>
-                  {kulRol === 'yonetici' && AY_ADLARI.slice(0,6).map((ad,i) => {
+                  {kulRol === 'yonetici' && AY_ADLARI.slice(0,7).map((ad,i) => {
                     const ciro = ayToplamCiro(i)
                     return <th key={i} style={{ color:'var(--accent)', fontSize:11, textAlign:'center', minWidth:70 }}>
                       <div>{ad}</div>
@@ -755,7 +755,7 @@ export default function Firmalar() {
                 <tr key={f.id} style={{ cursor:'pointer', opacity: f.aktif===false ? 0.5 : 1 }} onClick={()=>setDetay(f)}>
                   {kulRol === 'muhasebe' ? (() => {
                     const fark = f.aylik_fark ?? null
-                    const sonAy = [f.haziran_kisi, f.mayis_kisi, f.nisan_kisi, f.mart_kisi, f.subat_kisi, f.ocak_kisi].find(v => v !== null && v !== undefined) ?? 0
+                    const sonAy = [f.temmuz_kisi, f.haziran_kisi, f.mayis_kisi, f.nisan_kisi, f.mart_kisi, f.subat_kisi, f.ocak_kisi].find(v => v !== null && v !== undefined) ?? 0
                     const birimFiyat = Number(f.kisi_basi_ucret_yeni) || Number(f.kisi_basi_ucret) || 0
                     const toplamTl = sonAy * birimFiyat
                     return (<>
@@ -764,7 +764,7 @@ export default function Firmalar() {
                         {f.isg_katip_unvan && f.isg_katip_unvan !== f.unvan && <div style={{ fontSize:10, color:'var(--text-faint)' }}>{f.unvan}</div>}
                       </td>
                       <td><span className="badge" style={{ background:`${TEHLIKE_RENK[f.tehlike_sinifi]}22`, color:TEHLIKE_RENK[f.tehlike_sinifi], fontSize:11 }}>{f.tehlike_sinifi}</span></td>
-                      {[f.ocak_kisi, f.subat_kisi, f.mart_kisi, f.nisan_kisi, f.mayis_kisi, f.haziran_kisi].map((v, i) => {
+                      {[f.ocak_kisi, f.subat_kisi, f.mart_kisi, f.nisan_kisi, f.mayis_kisi, f.haziran_kisi, f.temmuz_kisi].map((v, i) => {
                         const kesildi = getFaturaKesildi(f, i)
                         return <td key={i} style={{ textAlign:'center', fontSize:12, padding:'4px 6px' }}>
                           <div style={{ color: v !== null ? 'var(--text)' : 'var(--text-faint)' }}>{v ?? '—'}</div>
@@ -800,11 +800,11 @@ export default function Firmalar() {
                   <td style={{ color:'var(--text-dim)', fontSize:13 }}>{f.ziyaret_periyodu||'—'}</td>
                   {kulRol === 'yonetici' && (() => {
                     const fark = f.aylik_fark ?? null
-                    const sonAy = [f.haziran_kisi, f.mayis_kisi, f.nisan_kisi, f.mart_kisi, f.subat_kisi, f.ocak_kisi].find(v => v !== null && v !== undefined) ?? 0
+                    const sonAy = [f.temmuz_kisi, f.haziran_kisi, f.mayis_kisi, f.nisan_kisi, f.mart_kisi, f.subat_kisi, f.ocak_kisi].find(v => v !== null && v !== undefined) ?? 0
                     const birimFiyat = Number(f.kisi_basi_ucret_yeni) || Number(f.kisi_basi_ucret) || 0
                     const toplamTl = sonAy * birimFiyat
                     return (<>
-                      {[f.ocak_kisi, f.subat_kisi, f.mart_kisi, f.nisan_kisi, f.mayis_kisi, f.haziran_kisi].map((v, i) => {
+                      {[f.ocak_kisi, f.subat_kisi, f.mart_kisi, f.nisan_kisi, f.mayis_kisi, f.haziran_kisi, f.temmuz_kisi].map((v, i) => {
                         const kesildi = getFaturaKesildi(f, i)
                         return <td key={i} style={{ textAlign:'center', fontSize:12, padding:'4px 6px' }}>
                           <div style={{ color: v !== null ? 'var(--text)' : 'var(--text-faint)' }}>{v ?? '—'}</div>
@@ -1678,5 +1678,6 @@ const mBox: any = { width:'100%', maxWidth:600, maxHeight:'90vh', overflowY:'aut
 const mHead: any = { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }
 const mTitle: any = { fontFamily:'Sora,sans-serif', fontSize:20, fontWeight:600, display:'flex', alignItems:'center', gap:10 }
 const xBtn: any = { background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer' }
+
 
 
